@@ -22,6 +22,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Debug GitHub Context
+        run: |
+          echo "github.repository: ${{ github.repository }}"
+          echo "github.repository_owner: ${{ github.repository_owner }}"
+          echo "github.ref: ${{ github.ref }}"
+
       - name: Authenticate to Google Cloud
         id: 'auth'
         uses: 'google-github-actions/auth@v2' # 워크로드 아이덴티티 연합을 위한 GitHub 액션
