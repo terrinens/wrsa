@@ -6,7 +6,7 @@ on:
       - db-sync
 
 env:
-  PROJECT_ID: weather-sync-github
+  PROJECT_ID: gitblog-service
   GCP_REGION: asia-northeast2
   REPOSITORY: weather-db-sync-source
   IMAGE_NAME: weather-db-sync-source-docker
