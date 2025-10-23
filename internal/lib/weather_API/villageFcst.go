@@ -1,6 +1,7 @@
 package weather_API
 
 import (
+	"db_sync/internal/lib/code"
 	"encoding/json"
 	"io"
 	"log"
@@ -36,25 +37,6 @@ type VillageFcstItem struct {
 	Ny        int    `json:"ny"`        // 예보 지점 Y좌표
 }
 
-type Category string
-
-const (
-	POP Category = "POP" // 강수확률 (%)
-	PTY Category = "PTY" // 강수형태 (코드값)
-	PCP Category = "PCP" // 1시간 강수량 (범주 1 mm)
-	REH Category = "REH" // 습도 (%)
-	SNO Category = "SNO" // 1시간 신적설 (범주 1 cm)
-	SKY Category = "SKY" // 하늘상태 (코드값)
-	TMP Category = "TMP" // 1시간 기온 (℃)
-	TMN Category = "TMN" // 일 최저기온 (℃)
-	TMX Category = "TMX" // 일 최고기온 (℃)
-	UUU Category = "UUU" // 풍속(동서성분) (m/s)
-	VVV Category = "VVV" // 풍속(남북성분) (m/s)
-	WAV Category = "WAV" // 파고 (M)
-	VEC Category = "VEC" // 풍향 (deg)
-	WSD Category = "WSD" // 풍속 (m/s)
-)
-
 /*
 VillageFcstInfo 단기예보 조회 API
 시스템 init에서부터 auth key는 주입되어있는것을 전제로 작성된 함수입니다.
@@ -63,7 +45,7 @@ baseDate : 20200101
 baseTime : 0000
 fcstDate : 20200102
 */
-func VillageFcstInfo(baseDate string, baseTime string, fcstDate string) map[Category][]VillageFcstItem {
+func VillageFcstInfo(baseDate string, baseTime string, fcstDate string) map[code.Category][]VillageFcstItem {
 	baseUrl := "https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst"
 	authKey := "j6VB3Gz5RJmlQdxs-USZOQ"
 	params := map[string]string{
@@ -143,11 +125,11 @@ func dataFilter(fcstDate string, items []VillageFcstItem) []VillageFcstItem {
 	return filtered
 }
 
-func categorySeparation(items []VillageFcstItem) map[Category][]VillageFcstItem {
-	separated := make(map[Category][]VillageFcstItem)
+func categorySeparation(items []VillageFcstItem) map[code.Category][]VillageFcstItem {
+	separated := make(map[code.Category][]VillageFcstItem)
 
 	for _, item := range items {
-		category := Category(item.Category)
+		category := code.Category(item.Category)
 		separated[category] = append(separated[category], item)
 	}
 
