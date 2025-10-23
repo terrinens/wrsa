@@ -26,14 +26,14 @@ type VillageFcstResponse struct {
 }
 
 type VillageFcstItem struct {
-	BaseDate  string `json:"baseDate"`
-	BaseTime  string `json:"baseTime"`
-	Category  string `json:"category"`
-	FcstDate  string `json:"fcstDate"`
-	FcstTime  string `json:"fcstTime"`
-	FcstValue string `json:"fcstValue"`
-	Nx        int    `json:"nx"`
-	Ny        int    `json:"ny"`
+	BaseDate  string `json:"baseDate"`  // 베이스 날짜
+	BaseTime  string `json:"baseTime"`  // 베이스 시간
+	Category  string `json:"category"`  // 예보 항목 카테고리
+	FcstDate  string `json:"fcstDate"`  // 예보 날짜
+	FcstTime  string `json:"fcstTime"`  // 예보 시간
+	FcstValue string `json:"fcstValue"` // 예보 값 | 다양성을 위해 String으로 처리하니, 데이터에 따라서 잘 분리해서 사용할것
+	Nx        int    `json:"nx"`        // 예보 지점 X좌표
+	Ny        int    `json:"ny"`        // 예보 지점 Y좌표
 }
 
 type Category string
