@@ -41,11 +41,28 @@ type VillageFcstItem struct {
 VillageFcstInfo 단기예보 조회 API
 시스템 init에서부터 auth key는 주입되어있는것을 전제로 작성된 함수입니다.
 nx,ny 는 현재 고정.
-baseDate : 20200101
-baseTime : 0000
-fcstDate : 20200102
+Fcst Info API는 최대 {baseDate + 1} ~ {baseDate + 4} 데이터를 보장합니다.
+
+반환값 예시
+```
+baseDate: 20251022
+
+		"20251023": {
+	        		"PCP": [
+	        			{...}
+					]
+		"20251024": {...}
+
+```
 */
-func VillageFcstInfo(baseDate string, baseTime string, fcstDate string) map[code.Category][]VillageFcstItem {
+func VillageFcstInfo(baseDate string, baseTime string, url string) map[string]map[code.Category][]VillageFcstItem {
+	url = createUrl(baseDate, baseTime)
+	result := callAPI(url)
+	data := dateSeparation(result)
+	return categorySeparation(data)
+}
+
+func createUrl(baseDate string, baseTime string) string {
 	baseUrl := "https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst"
 	authKey := "j6VB3Gz5RJmlQdxs-USZOQ"
 	params := map[string]string{
@@ -64,13 +81,7 @@ func VillageFcstInfo(baseDate string, baseTime string, fcstDate string) map[code
 		url += key + "=" + value + "&"
 	}
 	url = url[:len(url)-1]
-
-	result := callAPI(url)
-	result = dataFilter(fcstDate, result)
-
-	data := categorySeparation(result)
-
-	return data
+	return url
 }
 
 /*callAPI url에 따른 요청을 불러오고, 응답값에 item들을 추출하여 가져옵니다.*/
@@ -111,27 +122,28 @@ func callAPI(url string) []VillageFcstItem {
 	return apiResponse.Response.Body.Items.Item
 }
 
-/*
-dataFilter item들중 fcstDate와 동일한 아이템을 필터합니다.
-fcstDate 필터할 데이터
-*/
-func dataFilter(fcstDate string, items []VillageFcstItem) []VillageFcstItem {
-	var filtered []VillageFcstItem
+func dateSeparation(items []VillageFcstItem) map[string][]VillageFcstItem {
+	data := make(map[string][]VillageFcstItem)
 	for _, item := range items {
-		if item.FcstDate == fcstDate {
-			filtered = append(filtered, item)
-		}
+		data[item.FcstDate] = append(data[item.FcstDate], item)
 	}
-	return filtered
+	return data
 }
 
-func categorySeparation(items []VillageFcstItem) map[code.Category][]VillageFcstItem {
-	separated := make(map[code.Category][]VillageFcstItem)
+func categorySeparation(data map[string][]VillageFcstItem) map[string]map[code.Category][]VillageFcstItem {
+	newData := make(map[string]map[code.Category][]VillageFcstItem)
 
-	for _, item := range items {
-		category := code.Category(item.Category)
-		separated[category] = append(separated[category], item)
+	for key, item := range data {
+		separated := make(map[code.Category][]VillageFcstItem)
+
+		for _, inItems := range item {
+			category := code.Category(inItems.Category)
+
+			separated[category] = append(separated[category], inItems)
+		}
+
+		newData[key] = separated
 	}
 
-	return separated
+	return newData
 }
