@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-func windAvg(wsd []weather_API.VillageFcstItem) float64 {
+func WindAvg(wsd []weather_API.VillageFcstItem) float64 {
 	var total float64
 
 	for _, item := range wsd {

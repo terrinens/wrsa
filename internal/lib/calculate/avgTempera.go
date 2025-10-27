@@ -10,8 +10,8 @@ type TempData struct {
 	Max string
 }
 
-/*tempAvg 하루의 데이터를 받고, 평균 온도값을 계산하는 함수입니다.*/
-func tempAvg(tmn []weather_API.VillageFcstItem, tmx []weather_API.VillageFcstItem) float64 {
+/*TempAvg 하루의 데이터를 받고, 평균 온도값을 계산하는 함수입니다.*/
+func TempAvg(tmn []weather_API.VillageFcstItem, tmx []weather_API.VillageFcstItem) float64 {
 	timeGrouped := make(map[string]TempData)
 
 	for _, t := range tmn {

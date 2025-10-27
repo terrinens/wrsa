@@ -5,21 +5,21 @@ import (
 )
 
 // WashEval 빨래지수. 각 인자값은 평균값일 경우에만 해당됨.
-func WashEval(reh float64, temp float64, wind float64, sky code.Sky, pty code.Pty) code.Wash {
+func WashEval(reh int8, temp float64, wind float64, sky code.Sky, pty code.Pty) code.Wash {
 	re := rehEval(reh)
 	te := temEval(temp)
 	we := windEval(wind)
 	se := skyEval(sky)
 	pe := ptyEval(pty)
 
-	wash := (re * 0.2) + (te * 0.2) + (we * 0.1) + (se * 0.1) + (pe * 0.4)
+	wash := (re * 0.2) + (te * 0.2) + (we * 0.18) + (se * 0.1) + (pe * 0.32)
 
 	switch {
-	case wash <= 85:
+	case wash >= 85:
 		return code.REC
-	case wash <= 65:
-		return code.NORM
-	case wash <= 50:
+	case wash >= 65:
+		return code.NORMAL
+	case wash >= 50:
 		return code.CONS
 	default:
 		return code.NO
@@ -45,7 +45,7 @@ func temEval(temp float64) float64 {
 	}
 }
 
-func rehEval(reh float64) float64 {
+func rehEval(reh int8) float64 {
 	switch {
 	case reh < 40.0: // 40 미만은 매우 건조하여 빨래하기 매우 좋음
 		return 100.0
