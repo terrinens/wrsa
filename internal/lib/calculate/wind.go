@@ -2,6 +2,7 @@ package calculate
 
 import (
 	"db_sync/internal/lib/weather_API"
+	"math"
 	"strconv"
 )
 
@@ -13,5 +14,10 @@ func WindAvg(wsd []weather_API.VillageFcstItem) float64 {
 		total += value
 	}
 
-	return total / float64(len(wsd))
+	average := total / float64(len(wsd))
+	precision := 3
+	factor := math.Pow(10, float64(precision))
+	truncatedAverage := math.Trunc(average*factor) / factor
+
+	return truncatedAverage
 }

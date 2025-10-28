@@ -55,8 +55,8 @@ baseDate: 20251022
 
 ```
 */
-func VillageFcstInfo(baseDate string, baseTime string, url string) map[string]map[code.Category][]VillageFcstItem {
-	url = createUrl(baseDate, baseTime)
+func VillageFcstInfo(baseDate string, baseTime string) map[string]map[code.Category][]VillageFcstItem {
+	url := createUrl(baseDate, baseTime)
 	result := callAPI(url)
 	data := dateSeparation(result)
 	return categorySeparation(data)
@@ -71,7 +71,7 @@ func createUrl(baseDate string, baseTime string) string {
 		"dataType":  "JSON",
 		"base_date": baseDate,
 		"base_time": baseTime,
-		"nx":        "55",
+		"nx":        "60",
 		"ny":        "127",
 		"authKey":   authKey,
 	}

@@ -1,17 +1,12 @@
 package calculate
 
-import (
-	"db_sync/internal/lib/weather_API"
-	"strconv"
-)
-
 type TempData struct {
 	Min string
 	Max string
 }
 
 /*TempAvg 하루의 데이터를 받고, 평균 온도값을 계산하는 함수입니다.*/
-func TempAvg(tmn []weather_API.VillageFcstItem, tmx []weather_API.VillageFcstItem) float64 {
+/*func TempAvg(tmn []weather_API.VillageFcstItem, tmx []weather_API.VillageFcstItem) float64 {
 	timeGrouped := make(map[string]TempData)
 
 	for _, t := range tmn {
@@ -46,3 +41,4 @@ func TempAvg(tmn []weather_API.VillageFcstItem, tmx []weather_API.VillageFcstIte
 
 	return totalTemp / float64(count)
 }
+*/

@@ -40,3 +40,18 @@ func InitClient() {
 
 	Client = client
 }
+
+/*RegDBData 새 데이터를 등록합니다. */
+func RegDBData(data *Weather) bool {
+	ref := Client.Collection("weather")
+	ctx := context.Background()
+
+	_, _, err := ref.Add(ctx, data)
+	if err != nil {
+		log.Fatalf("error adding data: %v\n", err)
+		return false
+	}
+
+	log.Printf("data added successfully\n")
+	return true
+}
