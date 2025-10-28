@@ -16,4 +16,6 @@ WORKDIR /app
 
 COPY --from=builder /app/app ./app
 
+RUN apk add --no-cache tzdata
+
 ENTRYPOINT ["./app"]
