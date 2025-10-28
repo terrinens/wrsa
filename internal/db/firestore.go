@@ -41,17 +41,43 @@ func InitClient() {
 	Client = client
 }
 
-/*RegDBData 새 데이터를 등록합니다. */
-func RegDBData(data *Weather) bool {
+/*newDBData 새 데이터를 등록합니다. */
+func newDBData(data *Weather) bool {
 	ref := Client.Collection("weather")
 	ctx := context.Background()
 
 	_, _, err := ref.Add(ctx, data)
 	if err != nil {
-		log.Fatalf("error adding data: %v\n", err)
+		log.Fatalf("error adding data for %s: %v\n", data.FcstDate, err)
 		return false
 	}
 
-	log.Printf("data added successfully\n")
+	log.Printf("data added successfully for %s\n", data.FcstDate)
 	return true
+}
+
+/*RegDBData 기존의 Fcst Data, NX, XY와 동일한 필드를 찾고, 동일할 경우에 이를 갱신합니다. 존재하지 않을 경우에는 새롭게 등록합니다.*/
+func RegDBData(data *Weather) {
+	ref := Client.Collection("weather")
+	ctx := context.Background()
+
+	query := ref.
+		Where("FcstDate", "==", data.FcstDate).
+		Where("NX", "==", data.NX).
+		Where("NY", "==", data.NY)
+
+	iter := query.Documents(ctx)
+	defer iter.Stop()
+
+	doc, _ := iter.Next()
+	if doc == nil {
+		newDBData(data)
+	} else {
+		_, err := doc.Ref.Set(ctx, data)
+		if err != nil {
+			log.Fatalf("error updating data for %s: %v\n", data.FcstDate, err)
+		} else {
+			log.Printf("data updated successfully for %s\n", data.FcstDate)
+		}
+	}
 }

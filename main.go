@@ -27,14 +27,15 @@ func main() {
 	fcstItem := weather_API.VillageFcstInfo(callDate, "2300")
 	log.Printf("%s로부터 %s까지 데이터 불러오기 성공", callDate, endDate)
 
-	ttlTime := trueTime.AddDate(0, 0, 1).Format(timeLayout)
+	ttlTime := trueTime.AddDate(0, 0, 1).Add(time.Hour * 3).Format(timeLayout)
 	ttl := createTTL(ttlTime, loc)
-	dbData := createDBData(callDate, ttl, fcstItem)
+	dbData := createDBData(ttl, fcstItem)
 
 	for _, data := range dbData {
 		database.RegDBData(data)
 	}
 
+	log.Printf("모든 데이터 갱신 성공")
 }
 
 /*
@@ -53,7 +54,7 @@ createDBData fcst 의 데이터를 활용하여, DB에 등록할 데이터를 �
 
 ```
 */
-func createDBData(callDate string, ttl *timestamp.Timestamp, fcstItem map[string]map[code.Category][]weather_API.VillageFcstItem) map[string]*database.Weather {
+func createDBData(ttl *timestamp.Timestamp, fcstItem map[string]map[code.Category][]weather_API.VillageFcstItem) map[string]*database.Weather {
 	var syncData = make(map[string]*database.Weather)
 
 	lastTMN := 0.0
@@ -61,12 +62,13 @@ func createDBData(callDate string, ttl *timestamp.Timestamp, fcstItem map[string
 
 	for key, item := range fcstItem {
 		var dbData = database.Weather{
-			FcstDate:   callDate,
+			FcstDate:   key,
 			NX:         60,
 			NY:         127,
 			Name:       "서울",
 			AvgTempera: 0.0,
 			Wash:       "",
+			Sky:        code.SUNNY,
 			Wind:       0.0,
 			TTL:        ttl,
 		}
@@ -82,7 +84,8 @@ func createDBData(callDate string, ttl *timestamp.Timestamp, fcstItem map[string
 		}
 
 		dbData.AvgTempera = (lastTMN + lastTMX) / 2
-		dbData.Wash = string(wash(item))
+		dbData.Wash = wash(item)
+		dbData.Sky = code.Sky(simpleAVG(item[code.SKY]))
 		dbData.Wind = calculate.WindAvg(item[code.WSD])
 
 		syncData[key] = &dbData
@@ -101,15 +104,6 @@ func wash(fcstItem map[code.Category][]weather_API.VillageFcstItem) code.Wash {
 	avgPTY := code.Pty(simpleAVG(fcstItem[code.PTY]))
 
 	return calculate.WashEval(int8(avgREH), avgTemp, avgWind, avgSky, avgPTY)
-}
-
-func init() {
-	if len(os.Args) > 1 && strings.ToLower(os.Args[1]) == "dev" {
-		err := os.Setenv("DEV", "true")
-		if err != nil {
-			log.Fatalf("Failed to set DEV environment variable")
-		}
-	}
 }
 
 func simpleAVG(data []weather_API.VillageFcstItem) int64 {
@@ -131,5 +125,14 @@ func createTTL(date string, loc *time.Location) *timestamp.Timestamp {
 	return &timestamp.Timestamp{
 		Seconds: t.Unix(),
 		Nanos:   int32(t.Nanosecond()),
+	}
+}
+
+func init() {
+	if len(os.Args) > 1 && strings.ToLower(os.Args[1]) == "dev" {
+		err := os.Setenv("DEV", "true")
+		if err != nil {
+			log.Fatalf("Failed to set DEV environment variable")
+		}
 	}
 }
