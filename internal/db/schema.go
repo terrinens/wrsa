@@ -1,19 +1,19 @@
 package database
 
 import (
-	"db_sync/internal/lib/code"
+	"db_sync/internal/lib/code/weather"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
 type Weather struct {
 	FcstDate   string               `json:"FcstDate"`
-	NX         int64                `json:"NX"`
-	NY         int64                `json:"NY"`
+	NX         int                  `json:"NX"`
+	NY         int                  `json:"NY"`
 	Name       string               `json:"Name"`
 	AvgTempera float64              `json:"AvgTempera"`
-	Wash       code.Wash            `json:"Wash"`
-	Sky        code.Sky             `json:"Sky"`
+	Wash       weather.Wash         `json:"Wash"`
+	Sky        weather.Sky          `json:"Sky"`
 	Wind       float64              `json:"Wind"`
 	TTL        *timestamp.Timestamp `json:"TTL"`
 }

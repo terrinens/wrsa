@@ -1,4 +1,4 @@
-package code
+package weather
 
 type Category string
 

@@ -1,7 +1,7 @@
 package calculate
 
 import (
-	"db_sync/internal/lib/code"
+	"db_sync/internal/lib/code/weather"
 	"testing"
 )
 
@@ -10,54 +10,54 @@ var tests = []struct {
 	reh  int8
 	temp float64
 	wind float64
-	sky  code.Sky
-	pty  code.Pty
-	want code.Wash
+	sky  weather.Sky
+	pty  weather.Pty
+	want weather.Wash
 }{
 	{
 		name: "맑은날",
 		reh:  50,
 		temp: 23.5,
 		wind: 2.3,
-		sky:  code.SUNNY,
-		pty:  code.NONE,
-		want: code.REC,
+		sky:  weather.SUNNY,
+		pty:  weather.NONE,
+		want: weather.REC,
 	},
 	{
 		name: "비오는날",
 		reh:  90,
 		temp: 18.2,
 		wind: 5.1,
-		sky:  code.BLUR,
-		pty:  code.RAIN,
-		want: code.NO,
+		sky:  weather.BLUR,
+		pty:  weather.RAIN,
+		want: weather.NO,
 	},
 	{
 		name: "강풍",
 		reh:  45,
 		temp: 25.0,
 		wind: 10.5,
-		sky:  code.MOSTLY,
-		pty:  code.NONE,
-		want: code.NORMAL,
+		sky:  weather.MOSTLY,
+		pty:  weather.NONE,
+		want: weather.NORMAL,
 	},
 	{
 		name: "추운날",
 		reh:  30,
 		temp: 5.5,
 		wind: 3.2,
-		sky:  code.SUNNY,
-		pty:  code.NONE,
-		want: code.REC,
+		sky:  weather.SUNNY,
+		pty:  weather.NONE,
+		want: weather.REC,
 	},
 	{
 		name: "춥고 눈 옴",
 		reh:  50,
 		temp: 23.5,
 		wind: 2.3,
-		sky:  code.MOSTLY,
-		pty:  code.SNOW,
-		want: code.CONS,
+		sky:  weather.MOSTLY,
+		pty:  weather.SNOW,
+		want: weather.CONS,
 	},
 }
 

@@ -1,11 +1,11 @@
 package calculate
 
 import (
-	"db_sync/internal/lib/code"
+	"db_sync/internal/lib/code/weather"
 )
 
 // WashEval 빨래지수. 각 인자값은 평균값일 경우에만 해당됨.
-func WashEval(reh int8, temp float64, wind float64, sky code.Sky, pty code.Pty) code.Wash {
+func WashEval(reh int8, temp float64, wind float64, sky weather.Sky, pty weather.Pty) weather.Wash {
 	re := rehEval(reh)
 	te := temEval(temp)
 	we := windEval(wind)
@@ -16,13 +16,13 @@ func WashEval(reh int8, temp float64, wind float64, sky code.Sky, pty code.Pty) 
 
 	switch {
 	case wash >= 85:
-		return code.REC
+		return weather.REC
 	case wash >= 65:
-		return code.NORMAL
+		return weather.NORMAL
 	case wash >= 50:
-		return code.CONS
+		return weather.CONS
 	default:
-		return code.NO
+		return weather.NO
 	}
 }
 
@@ -77,22 +77,22 @@ func windEval(windSpeed float64) float64 {
 	}
 }
 
-func skyEval(sky code.Sky) float64 {
+func skyEval(sky weather.Sky) float64 {
 	switch sky {
-	case code.SUNNY:
+	case weather.SUNNY:
 		return 100
-	case code.MOSTLY:
+	case weather.MOSTLY:
 		return 60
 	default:
 		return 0
 	}
 }
 
-func ptyEval(pty code.Pty) float64 {
+func ptyEval(pty weather.Pty) float64 {
 	switch pty {
-	case code.NONE:
+	case weather.NONE:
 		return 100
-	case code.RS:
+	case weather.RS:
 		return 30.0
 	default:
 		return 0

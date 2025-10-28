@@ -3,7 +3,8 @@ package main
 import (
 	database "db_sync/internal/db"
 	"db_sync/internal/lib/calculate"
-	"db_sync/internal/lib/code"
+	"db_sync/internal/lib/code/grid"
+	"db_sync/internal/lib/code/weather"
 	"db_sync/internal/lib/weather_API"
 	"log"
 	"os"
@@ -21,18 +22,25 @@ func main() {
 
 	timeLayout := "20060102"
 	trueTime := time.Now().In(loc)
+	trueDate := trueTime.Format(timeLayout)
 	callDate := trueTime.AddDate(0, 0, -1).Format(timeLayout)
-	endDate := trueTime.AddDate(0, 0, 4).Format(timeLayout)
-
-	fcstItem := weather_API.VillageFcstInfo(callDate, "2300")
-	log.Printf("%s로부터 %s까지 데이터 불러오기 성공", callDate, endDate)
+	endDate := trueTime.AddDate(0, 0, 3).Format(timeLayout)
 
 	ttlTime := trueTime.AddDate(0, 0, 1).Add(time.Hour * 3).Format(timeLayout)
 	ttl := createTTL(ttlTime, loc)
-	dbData := createDBData(ttl, fcstItem)
 
-	for _, data := range dbData {
-		database.RegDBData(data)
+	for _, info := range grid.RepresentativeGrids {
+		nx := info.Nx
+		ny := info.Ny
+
+		fcstItem := weather_API.VillageFcstInfo(callDate, "2300", nx, ny)
+		dbData := createDBData(ttl, fcstItem, info)
+
+		for _, data := range dbData {
+			database.RegDBData(data)
+		}
+
+		log.Printf("%s 지역 %s로부터 %s까지 데이터 등록 성공", info.Name, trueDate, endDate)
 	}
 
 	log.Printf("모든 데이터 갱신 성공")
@@ -54,7 +62,7 @@ createDBData fcst 의 데이터를 활용하여, DB에 등록할 데이터를 �
 
 ```
 */
-func createDBData(ttl *timestamp.Timestamp, fcstItem map[string]map[code.Category][]weather_API.VillageFcstItem) map[string]*database.Weather {
+func createDBData(ttl *timestamp.Timestamp, fcstItem map[string]map[weather.Category][]weather_API.VillageFcstItem, grid grid.RepresentativeGrid) map[string]*database.Weather {
 	var syncData = make(map[string]*database.Weather)
 
 	lastTMN := 0.0
@@ -63,30 +71,30 @@ func createDBData(ttl *timestamp.Timestamp, fcstItem map[string]map[code.Categor
 	for key, item := range fcstItem {
 		var dbData = database.Weather{
 			FcstDate:   key,
-			NX:         60,
-			NY:         127,
-			Name:       "서울",
+			NX:         grid.Nx,
+			NY:         grid.Ny,
+			Name:       grid.Name,
 			AvgTempera: 0.0,
 			Wash:       "",
-			Sky:        code.SUNNY,
+			Sky:        weather.SUNNY,
 			Wind:       0.0,
 			TTL:        ttl,
 		}
 
 		// 각 두개의 데이터는 최하, 최고의 데이터를 하나씩만 소유하고 있으므로, 0 배열 밖에 존재하지 않음.
 		// 가장 먼 날짜, 4일 후의 날짜에서는 최하,최고 날씨가 관측되지 않음. 그러므로 조건 처리.
-		if item[code.TMN] != nil {
-			lastTMN, _ = strconv.ParseFloat(item[code.TMN][0].FcstValue, 64)
+		if item[weather.TMN] != nil {
+			lastTMN, _ = strconv.ParseFloat(item[weather.TMN][0].FcstValue, 64)
 		}
 
-		if item[code.TMX] != nil {
-			lastTMX, _ = strconv.ParseFloat(item[code.TMX][0].FcstValue, 64)
+		if item[weather.TMX] != nil {
+			lastTMX, _ = strconv.ParseFloat(item[weather.TMX][0].FcstValue, 64)
 		}
 
 		dbData.AvgTempera = (lastTMN + lastTMX) / 2
 		dbData.Wash = wash(item)
-		dbData.Sky = code.Sky(simpleAVG(item[code.SKY]))
-		dbData.Wind = calculate.WindAvg(item[code.WSD])
+		dbData.Sky = weather.Sky(simpleAVG(item[weather.SKY]))
+		dbData.Wind = calculate.WindAvg(item[weather.WSD])
 
 		syncData[key] = &dbData
 	}
@@ -95,13 +103,13 @@ func createDBData(ttl *timestamp.Timestamp, fcstItem map[string]map[code.Categor
 }
 
 // wash 빨래지수를 도출해내기 위한 함수입니다.
-func wash(fcstItem map[code.Category][]weather_API.VillageFcstItem) code.Wash {
+func wash(fcstItem map[weather.Category][]weather_API.VillageFcstItem) weather.Wash {
 	// fcstDate 하루 온도 구하기
-	avgREH := simpleAVG(fcstItem[code.REH])
-	avgTemp := float64(code.TMN[0]+code.TMX[0]) / 2
-	avgWind := calculate.WindAvg(fcstItem[code.WSD])
-	avgSky := code.Sky(simpleAVG(fcstItem[code.SKY]))
-	avgPTY := code.Pty(simpleAVG(fcstItem[code.PTY]))
+	avgREH := simpleAVG(fcstItem[weather.REH])
+	avgTemp := float64(weather.TMN[0]+weather.TMX[0]) / 2
+	avgWind := calculate.WindAvg(fcstItem[weather.WSD])
+	avgSky := weather.Sky(simpleAVG(fcstItem[weather.SKY]))
+	avgPTY := weather.Pty(simpleAVG(fcstItem[weather.PTY]))
 
 	return calculate.WashEval(int8(avgREH), avgTemp, avgWind, avgSky, avgPTY)
 }

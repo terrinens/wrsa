@@ -1,11 +1,12 @@
 package weather_API
 
 import (
-	"db_sync/internal/lib/code"
+	"db_sync/internal/lib/code/weather"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type VillageFcstResponse struct {
@@ -55,14 +56,14 @@ baseDate: 20251022
 
 ```
 */
-func VillageFcstInfo(baseDate string, baseTime string) map[string]map[code.Category][]VillageFcstItem {
-	url := createUrl(baseDate, baseTime)
+func VillageFcstInfo(baseDate string, baseTime string, nx int, ny int) map[string]map[weather.Category][]VillageFcstItem {
+	url := createUrl(baseDate, baseTime, nx, ny)
 	result := callAPI(url)
 	data := dateSeparation(result)
 	return categorySeparation(data)
 }
 
-func createUrl(baseDate string, baseTime string) string {
+func createUrl(baseDate string, baseTime string, nx int, ny int) string {
 	baseUrl := "https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst"
 	authKey := "j6VB3Gz5RJmlQdxs-USZOQ"
 	params := map[string]string{
@@ -71,8 +72,8 @@ func createUrl(baseDate string, baseTime string) string {
 		"dataType":  "JSON",
 		"base_date": baseDate,
 		"base_time": baseTime,
-		"nx":        "60",
-		"ny":        "127",
+		"nx":        strconv.Itoa(nx),
+		"ny":        strconv.Itoa(ny),
 		"authKey":   authKey,
 	}
 
@@ -130,14 +131,14 @@ func dateSeparation(items []VillageFcstItem) map[string][]VillageFcstItem {
 	return data
 }
 
-func categorySeparation(data map[string][]VillageFcstItem) map[string]map[code.Category][]VillageFcstItem {
-	newData := make(map[string]map[code.Category][]VillageFcstItem)
+func categorySeparation(data map[string][]VillageFcstItem) map[string]map[weather.Category][]VillageFcstItem {
+	newData := make(map[string]map[weather.Category][]VillageFcstItem)
 
 	for key, item := range data {
-		separated := make(map[code.Category][]VillageFcstItem)
+		separated := make(map[weather.Category][]VillageFcstItem)
 
 		for _, inItems := range item {
-			category := code.Category(inItems.Category)
+			category := weather.Category(inItems.Category)
 
 			separated[category] = append(separated[category], inItems)
 		}

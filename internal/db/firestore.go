@@ -52,7 +52,6 @@ func newDBData(data *Weather) bool {
 		return false
 	}
 
-	log.Printf("data added successfully for %s\n", data.FcstDate)
 	return true
 }
 
@@ -76,8 +75,6 @@ func RegDBData(data *Weather) {
 		_, err := doc.Ref.Set(ctx, data)
 		if err != nil {
 			log.Fatalf("error updating data for %s: %v\n", data.FcstDate, err)
-		} else {
-			log.Printf("data updated successfully for %s\n", data.FcstDate)
 		}
 	}
 }
