@@ -1,4 +1,4 @@
-package helloworld
+package main
 
 import (
 	"encoding/json"
@@ -12,11 +12,6 @@ func InitRouter() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		weatherData(w, r)
 	})
-}
-
-type WeatherResponse struct {
-	Nx int `json:"nx"`
-	Ny int `json:"ny"`
 }
 
 func weatherData(w http.ResponseWriter, r *http.Request) {
