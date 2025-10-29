@@ -6,11 +6,12 @@ import (
 	"strconv"
 
 	"example.com/gcf/db"
-	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
-func init() {
-	functions.HTTP("weatherData", weatherData)
+func InitRouter() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		weatherData(w, r)
+	})
 }
 
 type WeatherResponse struct {
