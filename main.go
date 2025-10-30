@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"example.com/gcf/db"
-	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
 func main() {
@@ -24,8 +23,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}
-
-	functions.HTTP("weatherData", weatherData)
 }
 
 func init() {

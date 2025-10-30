@@ -18,13 +18,34 @@ func weatherData(w http.ResponseWriter, r *http.Request) {
 	queryNX := r.URL.Query().Get("nx")
 	queryNY := r.URL.Query().Get("ny")
 
-	nx, err := conversionInt(queryNX, w)
-	if !err {
-		return
+	var message []string
+	var errCount int
+
+	nx, err := strconv.Atoi(queryNX)
+	if err != nil {
+		errCount++
+		message = append(message, "nx is not a number")
 	}
 
-	ny, err := conversionInt(queryNY, w)
-	if !err {
+	ny, err := strconv.Atoi(queryNY)
+	if err != nil {
+		errCount++
+		message = append(message, "ny is not a number")
+	}
+
+	if errCount > 0 {
+		type ErrorResponse struct {
+			Errors []string `json:"errors"`
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		err = json.NewEncoder(w).Encode(ErrorResponse{Errors: message})
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("server error"))
+		}
+
 		return
 	}
 
@@ -45,7 +66,7 @@ func weatherData(w http.ResponseWriter, r *http.Request) {
 }
 
 // query String to Int conversion 실패 할 경우에 응답값을 설정합니다.
-func conversionInt(str string, w http.ResponseWriter) (int, bool) {
+func conversionInt(str string, failMessage string, w http.ResponseWriter) (int, bool) {
 	num, err := strconv.Atoi(str)
 	if err != nil {
 		http.Error(w, "Not a number", http.StatusBadRequest)
