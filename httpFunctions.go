@@ -65,18 +65,9 @@ func weatherData(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// query String to Int conversion 실패 할 경우에 응답값을 설정합니다.
-func conversionInt(str string, failMessage string, w http.ResponseWriter) (int, bool) {
-	num, err := strconv.Atoi(str)
-	if err != nil {
-		http.Error(w, "Not a number", http.StatusBadRequest)
-		return 0, false
-	}
-	return num, true
-}
-
 type resData struct {
 	Name       string  `json:"Name"`
+	FcstDate   string  `json:"FcstDate"`
 	AvgTempera float64 `json:"AvgTempera"`
 	Wash       string  `json:"Wash"`
 	Sky        int     `json:"Sky"`
@@ -90,6 +81,7 @@ func dataProcess(data []*db.Weather) []resData {
 	for _, doc := range data {
 		slice := resData{
 			Name:       doc.Name,
+			FcstDate:   doc.FcstDate,
 			AvgTempera: doc.AvgTempera,
 			Wash:       doc.Wash,
 			Sky:        doc.Sky,
