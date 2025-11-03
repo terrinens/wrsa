@@ -1,5 +1,5 @@
 import 'package:logging/logging.dart';
-import 'package:wrsa_app/api/weather.kts.dart' as weather;
+import 'package:wrsa_app/services/weather.kts.dart' as weather;
 import 'package:wrsa_app/main.dart';
 
 var log = Logger("unit debug");
