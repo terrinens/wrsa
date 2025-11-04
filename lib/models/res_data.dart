@@ -28,4 +28,6 @@ class ResData {
 
   factory ResData.fromJson(Map<String, dynamic> json) =>
       _$ResDataFromJson(json);
+  
+  Map<String, dynamic> toJson() => _$ResDataToJson(this);
 }

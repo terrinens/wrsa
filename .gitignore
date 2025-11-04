@@ -246,3 +246,6 @@ fabric.properties
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 
 # End of https://www.toptal.com/developers/gitignore/api/jetbrains,dart,flutter,java,kotlin
+/lib/dummy/
+/test/dummy/
+/integration_test/dummy/
