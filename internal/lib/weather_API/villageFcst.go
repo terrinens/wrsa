@@ -6,7 +6,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 )
 
 type VillageFcstResponse struct {
@@ -63,9 +65,19 @@ func VillageFcstInfo(baseDate string, baseTime string, nx int, ny int) map[strin
 	return categorySeparation(data)
 }
 
+func getAuthKey() string {
+	keyLocation := "/weather/weather-api-key"
+	content, err := os.ReadFile(keyLocation)
+	if err != nil {
+		log.Fatal("API key file read failed: " + err.Error())
+		return ""
+	}
+	return strings.TrimSpace(string(content))
+}
+
 func createUrl(baseDate string, baseTime string, nx int, ny int) string {
 	baseUrl := "https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0/getVilageFcst"
-	authKey := "j6VB3Gz5RJmlQdxs-USZOQ"
+	authKey := getAuthKey()
 	params := map[string]string{
 		"pageNo":    "1",
 		"numOfRows": "1000",
