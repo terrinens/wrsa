@@ -29,21 +29,65 @@ func main() {
 	ttlTime := trueTime.AddDate(0, 0, 1).Add(time.Hour * 3).Format(timeLayout)
 	ttl := createTTL(ttlTime, loc)
 
-	for _, info := range grid.RepresentativeGrids {
+	var rDate = regDate{ttl: ttl, callDate: callDate, trueDate: trueDate, endDate: endDate}
+	var errorFCST = dataReg(grid.RepresentativeGrids, rDate)
+
+	if len(errorFCST) == 0 {
+		log.Printf("모든 데이터 갱신 성공")
+	} else {
+		log.Printf("API 호출 실패건수 %d이 있으므로 재호출 시도...", len(errorFCST))
+		errorFCST = dataReg(grid.RepresentativeGrids, rDate)
+
+		if len(errorFCST) != 0 {
+			log.Fatalf("실패된 요청을 재요청했으나, %d의 건이 재실패되었습니다. 서버 상태를 확인해주세요", len(errorFCST))
+		}
+	}
+}
+
+type ErrorFCST struct {
+	baseTime string
+	nx       int
+	ny       int
+}
+
+type regDate struct {
+	ttl      *timestamp.Timestamp
+	callDate string
+	trueDate string
+	endDate  string
+}
+
+// dataReg 주어진 grid를 토대로 API를 호출하고, 이를 db에 등록합니다.
+func dataReg(grid []grid.RepresentativeGrid, date regDate) []ErrorFCST {
+	var errorFCST []ErrorFCST
+
+	for _, info := range grid {
 		nx := info.Nx
 		ny := info.Ny
 
-		fcstItem := weather_API.VillageFcstInfo(callDate, "2300", nx, ny)
-		dbData := createDBData(ttl, fcstItem, info)
+		fcstItem := weather_API.VillageFcstInfo(date.callDate, "2300", nx, ny)
 
-		for _, data := range dbData {
-			database.RegDBData(data)
+		if fcstItem == nil {
+			errorFCST = append(errorFCST, ErrorFCST{baseTime: "2300", nx: nx, ny: ny})
+			log.Printf("%s 지역 데이터 불러오기 실패.", info.Name)
+			continue
 		}
 
-		log.Printf("%s 지역 %s로부터 %s까지 데이터 등록 성공", info.Name, trueDate, endDate)
+		regData(date.ttl, fcstItem, info)
+
+		log.Printf("%s 지역 %s로부터 %s까지 데이터 등록 성공", info.Name, date.trueDate, date.endDate)
 	}
 
-	log.Printf("모든 데이터 갱신 성공")
+	return errorFCST
+}
+
+// regData fcstItem을 기반으로 데이터를 db에 등록합니다.
+func regData(ttl *timestamp.Timestamp, fcstItem map[string]map[weather.Category][]weather_API.VillageFcstItem, info grid.RepresentativeGrid) {
+	dbData := createDBData(ttl, fcstItem, info)
+
+	for _, data := range dbData {
+		database.RegDBData(data)
+	}
 }
 
 /*

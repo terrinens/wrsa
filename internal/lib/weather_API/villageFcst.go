@@ -61,6 +61,12 @@ baseDate: 20251022
 func VillageFcstInfo(baseDate string, baseTime string, nx int, ny int) map[string]map[weather.Category][]VillageFcstItem {
 	url := createUrl(baseDate, baseTime, nx, ny)
 	result := callAPI(url)
+
+	if result == nil {
+		log.Println("기상청 API 호출에 실패했습니다.")
+		return nil
+	}
+
 	data := dateSeparation(result)
 	return categorySeparation(data)
 }
