@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart' hide VerticalDivider;
 import 'package:wrsa_app/widgets/divider.dart';
+import 'package:wrsa_app/constants/cloud.dart';
 
 // 날씨 아이콘 위젯
 class WeatherIcon extends StatelessWidget {
-  const WeatherIcon({super.key});
+  final Sky sky;
+
+  const WeatherIcon({super.key, required this.sky});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(color: Colors.blue[50], shape: BoxShape.circle),
-      child: Icon(Icons.cloud, size: 80, color: Colors.blue[200]),
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+            color: Colors.blue[50], shape: BoxShape.circle),
+        child: Icon(sky.toIcon().icon, size: 80)
     );
   }
 }
@@ -35,8 +39,8 @@ class WeatherDetailsGrid extends StatelessWidget {
               Expanded(
                 child: WeatherDetailItem(
                   icon: Icons.thermostat,
-                  label: 'Feels Like',
-                  value: '4.2°',
+                  label: '빨래',
+                  value: '비추천',
                   iconColor: Colors.blue[300]!,
                 ),
               ),
@@ -55,39 +59,6 @@ class WeatherDetailsGrid extends StatelessWidget {
                   icon: Icons.wb_sunny,
                   label: 'UV Index',
                   value: 'Low',
-                  iconColor: Colors.blue[300]!,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const HorizontalDivider(),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: WeatherDetailItem(
-                  icon: Icons.air,
-                  label: 'Wind',
-                  value: '5.66 m/s',
-                  iconColor: Colors.blue[300]!,
-                ),
-              ),
-              const VerticalDivider(),
-              Expanded(
-                child: WeatherDetailItem(
-                  icon: Icons.water,
-                  label: 'Humidity',
-                  value: '53%',
-                  iconColor: Colors.blue[300]!,
-                ),
-              ),
-              const VerticalDivider(),
-              Expanded(
-                child: WeatherDetailItem(
-                  icon: Icons.cloud_outlined,
-                  label: 'Cloudiness',
-                  value: '100%',
                   iconColor: Colors.blue[300]!,
                 ),
               ),

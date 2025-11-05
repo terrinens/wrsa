@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:wrsa_app/constants/cloud.dart';
 import 'package:wrsa_app/widgets/weather.dart';
 
 // 온도 단위 토글 위젯
@@ -33,10 +33,7 @@ class TemperatureToggle extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: const Text(
               '°F',
-              style: TextStyle(
-                color: Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -48,16 +45,21 @@ class TemperatureToggle extends StatelessWidget {
 // 메인 온도 표시 위젯
 class MainTemperatureDisplay extends StatelessWidget {
   final num temper;
-  final String cloud;
-  const MainTemperatureDisplay({super.key, required this.temper, required this.cloud});
+  final Sky sky;
+
+  const MainTemperatureDisplay({
+    super.key,
+    required this.temper,
+    required this.sky,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        TemperatureText(temper: temper, cloud: cloud,),
-        WeatherIcon(),
+        TemperatureText(temper: temper, cloud: sky.toString()),
+        WeatherIcon(sky: sky),
       ],
     );
   }
@@ -84,13 +86,7 @@ class TemperatureText extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Text(
-          cloud,
-          style: TextStyle(
-            fontSize: 18,
-            color: Colors.grey,
-          ),
-        ),
+        Text(cloud, style: TextStyle(fontSize: 18, color: Colors.grey)),
       ],
     );
   }

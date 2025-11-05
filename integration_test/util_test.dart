@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wrsa_app/utils/areaGrid.dart';
-import 'package:wrsa_app/utils/dataSync.dart';
+import 'package:wrsa_app/utils/data_sync.dart';
 import 'dart:io';
 import 'dart:convert' as convert;
 import 'package:wrsa_app/models/res_data.dart';
