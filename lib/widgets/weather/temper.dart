@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wrsa_app/constants/cloud.dart';
-import 'package:wrsa_app/widgets/weather.dart';
+import 'package:wrsa_app/widgets/weather/weather.dart';
 
 // 온도 단위 토글 위젯
 class TemperatureToggle extends StatelessWidget {

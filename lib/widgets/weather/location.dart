@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wrsa_app/widgets/temper.dart';
+import 'package:wrsa_app/widgets/weather/temper.dart';
 
 // 위치와 날짜 표시 위젯
 class LocationDateRow extends StatelessWidget {
