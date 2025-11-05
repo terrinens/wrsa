@@ -11,21 +11,25 @@ class WeatherIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-        width: 120,
-        height: 120,
-        decoration: BoxDecoration(
-            color: Colors.blue[50], shape: BoxShape.circle),
-        child: Icon(sky.toIcon().icon, size: 80)
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(color: Colors.blue[50], shape: BoxShape.circle),
+      child: Icon(sky.toIcon().icon, size: 80),
     );
   }
 }
 
 // 날씨 상세 정보 그리드 위젯
 class WeatherDetailsGrid extends StatelessWidget {
-  const WeatherDetailsGrid({super.key});
+  final String wash;
+  final double wind;
+
+  const WeatherDetailsGrid({super.key, required this.wash, required this.wind});
 
   @override
   Widget build(BuildContext context) {
+    final iconColor = Colors.blue[300] ?? Colors.blue;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -38,28 +42,29 @@ class WeatherDetailsGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: WeatherDetailItem(
-                  icon: Icons.thermostat,
+                  icon: Icons.dry_cleaning,
                   label: '빨래',
-                  value: '비추천',
-                  iconColor: Colors.blue[300]!,
+                  value: wash,
+                  iconColor: iconColor,
+                ),
+              ),
+
+              const VerticalDivider(),
+              Expanded(
+                child: WeatherDetailItem(
+                  icon: Icons.wind_power_outlined,
+                  label: '평균 풍속',
+                  value: wind,
+                  iconColor: iconColor,
                 ),
               ),
               const VerticalDivider(),
               Expanded(
                 child: WeatherDetailItem(
-                  icon: Icons.water_drop,
-                  label: 'Precipitation',
-                  value: '100%',
-                  iconColor: Colors.blue[300]!,
-                ),
-              ),
-              const VerticalDivider(),
-              Expanded(
-                child: WeatherDetailItem(
-                  icon: Icons.wb_sunny,
-                  label: 'UV Index',
-                  value: 'Low',
-                  iconColor: Colors.blue[300]!,
+                  icon: Icons.warning,
+                  label: '개발중',
+                  value: '개발중',
+                  iconColor: iconColor,
                 ),
               ),
             ],
@@ -74,7 +79,7 @@ class WeatherDetailsGrid extends StatelessWidget {
 class WeatherDetailItem extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String value;
+  final dynamic value;
   final Color iconColor;
 
   const WeatherDetailItem({
@@ -98,7 +103,7 @@ class WeatherDetailItem extends StatelessWidget {
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 4),
         Text(
-          value,
+          value.toString(),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ],
