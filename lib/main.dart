@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:wrsa_app/constants/cloud.dart';
 import 'package:wrsa_app/models/res_data.dart';
 import 'package:wrsa_app/utils/alarm.dart';
 import 'package:wrsa_app/utils/areaGrid.dart';
 import 'package:wrsa_app/utils/data_sync.dart';
-import 'package:wrsa_app/widgets/alarm/alarm_button.dart';
-import 'package:wrsa_app/widgets/weather/location.dart';
-import 'package:wrsa_app/widgets/weather/temper.dart';
-import 'package:wrsa_app/widgets/weather/weather.dart';
+import 'package:wrsa_app/widgets/alarm/alarm_list.dart';
 import 'package:wrsa_app/theme/colors.dart' as custom_colors;
 
 void main() async {
@@ -65,7 +61,7 @@ class WeatherHomePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    LocationDateRow(location: data.name, syncTime: 'test1'),
+                    /*LocationDateRow(location: data.name, syncTime: 'test1'),
                     SizedBox(height: 40),
                     MainTemperatureDisplay(
                       sky: Sky.fromValue(data.sky),
@@ -73,8 +69,8 @@ class WeatherHomePage extends StatelessWidget {
                     ),
                     SizedBox(height: 30),
                     WeatherDetailsGrid(wash: data.wash, wind: data.wind),
-                    SizedBox(height: 30),
-                    AlarmButton(),
+                    SizedBox(height: 30),*/
+                    AlarmList(),
                   ],
                 ),
               ),
