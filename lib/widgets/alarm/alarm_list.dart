@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 import 'package:wrsa_app/utils/alarm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wrsa_app/widgets/alarm/alarm_ring_screen.dart';
 import 'dart:convert';
 
 class AlarmList extends StatefulWidget {
@@ -239,29 +243,37 @@ class _AlarmListState extends State<AlarmList> {
     }
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // 알람 추가 버튼
-        InkWell(
-          onTap: _addAlarm,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-            child: Row(
-              children: [
-                Container(
-                  width: 25,
-                  height: 25,
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(8),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _addAlarm,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 25,
+                    height: 25,
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.add,
+                      color: Colors.white,
+                      weight: 20,
+                    ),
                   ),
-                  child: const Icon(Icons.add, color: Colors.white, weight: 20),
-                ),
-                const SizedBox(width: 16),
-                const Text(
-                  '알람 추가',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-              ],
+                  const SizedBox(width: 16),
+                  const Text(
+                    '알람 추가',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

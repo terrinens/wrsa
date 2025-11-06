@@ -4,11 +4,29 @@ import 'package:wrsa_app/utils/alarm.dart';
 import 'package:wrsa_app/utils/areaGrid.dart';
 import 'package:wrsa_app/utils/data_sync.dart';
 import 'package:wrsa_app/widgets/alarm/alarm_list.dart';
+import 'package:wrsa_app/widgets/alarm/alarm_ring_screen.dart';
 import 'package:wrsa_app/theme/colors.dart' as custom_colors;
+import 'package:alarm/alarm.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AlarmManager.initialize();
+
+  // 백그라운드에서도 작동하는 알람 리스너
+  Alarm.ringStream.stream.listen((settings) {
+    log.info('알람 작동 : ${settings.id}');
+    
+    // 전역 네비게이터를 사용해서 화면 이동
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => AlarmRingScreen(alarmSettings: settings),
+      ),
+    );
+  });
+
   runApp(const WeatherApp());
 }
 
@@ -18,6 +36,7 @@ class WeatherApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // GlobalKey 연결
       debugShowCheckedModeBanner: false,
       home: const WeatherHomePage(),
     );

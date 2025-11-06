@@ -1,13 +1,13 @@
 import 'package:alarm/alarm.dart';
 
+// FUTURE 추후, 알람 커스텀에 사용할 옵션
+String getAlarmSound() {
+  return 'assets/audio/default.mp3';
+}
+
 class AlarmManager {
   static Future<void> initialize() async {
     await Alarm.init();
-  }
-
-  // FUTURE 추후, 알람 커스텀에 사용할 옵션
-  static String _getAlarmSound() {
-    return 'assets/audio/default.mp3';
   }
 
   static Future<void> setAlarm({
@@ -19,7 +19,7 @@ class AlarmManager {
     final alarmSettings = AlarmSettings(
       id: id,
       dateTime: dateTime,
-      assetAudioPath: _getAlarmSound(),
+      assetAudioPath: getAlarmSound(),
       loopAudio: true,
       vibrate: true,
       volume: 0.8,
