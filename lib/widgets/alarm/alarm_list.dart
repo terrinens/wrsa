@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:wrsa_app/utils/alarm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wrsa_app/widgets/alarm/alarm_picker_screen.dart';
+import 'package:wrsa_app/models/alarm_data.dart';
 import 'dart:convert';
 
 class AlarmList extends StatefulWidget {
@@ -79,22 +80,22 @@ class _AlarmListState extends State<AlarmList> {
     await AlarmManager.setAlarm(
       id: alarm.id,
       dateTime: alarmTime,
-      title: '세탁 알림',
-      body: '오늘은 빨래하기 좋은 날입니다!',
+      title: alarm.title,
     );
   }
 
   Future<void> _addAlarm() async {
     // 페이지 이동 방식으로 변경
-    final TimeOfDay? selectedTime = await Navigator.push<TimeOfDay>(
+    final AlarmData? alarmData = await Navigator.push<AlarmData>(
       context,
       MaterialPageRoute(builder: (context) => const AlarmTimePickerScreen()),
     );
 
-    if (selectedTime != null) {
+    if (alarmData != null) {
       final newAlarm = AlarmItem(
         id: _getNextAlarmId(),
-        time: selectedTime,
+        title: alarmData.title,
+        time: alarmData.time,
         isEnabled: false,
       );
 
@@ -131,9 +132,10 @@ class _AlarmListState extends State<AlarmList> {
           (alarm) => AlarmItemWidget(
             alarm: alarm,
             onDelete: () => _removeAlarm(alarm.id),
-            onTimeChanged: (newTime) async {
+            onAlarmChanged: (alarmData) async {
               setState(() {
-                alarm.time = newTime;
+                alarm.time = alarmData.time;
+                alarm.title = alarmData.title;
               });
               if (alarm.isEnabled) {
                 await _scheduleAlarm(alarm);
@@ -199,15 +201,22 @@ class AlarmAddButton extends StatelessWidget {
 
 class AlarmItem {
   final int id;
+  String title;
   TimeOfDay time;
   bool isEnabled;
 
-  AlarmItem({required this.id, required this.time, required this.isEnabled});
+  AlarmItem({
+    required this.id,
+    required this.title,
+    required this.time,
+    required this.isEnabled,
+  });
 
   // JSON으로 변환
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'title': title,
       'hour': time.hour,
       'minute': time.minute,
       'isEnabled': isEnabled,
@@ -218,6 +227,7 @@ class AlarmItem {
   factory AlarmItem.fromJson(Map<String, dynamic> json) {
     return AlarmItem(
       id: json['id'],
+      title: json['title'],
       time: TimeOfDay(hour: json['hour'], minute: json['minute']),
       isEnabled: json['isEnabled'],
     );
@@ -227,28 +237,31 @@ class AlarmItem {
 class AlarmItemWidget extends StatelessWidget {
   final AlarmItem alarm;
   final VoidCallback onDelete;
-  final Function(TimeOfDay) onTimeChanged;
+  final Function(AlarmData) onAlarmChanged;
   final Function(bool) onToggle;
 
   const AlarmItemWidget({
     super.key,
     required this.alarm,
     required this.onDelete,
-    required this.onTimeChanged,
+    required this.onAlarmChanged,
     required this.onToggle,
   });
 
   Future<void> _selectTime(BuildContext context) async {
-    // 페이지 이동 방식으로 변경
-    final TimeOfDay? newTime = await Navigator.push<TimeOfDay>(
+    // 페이지 이동 방식으로 변경 - AlarmData 받기
+    final AlarmData? alarmData = await Navigator.push<AlarmData>(
       context,
       MaterialPageRoute(
-        builder: (context) => AlarmTimePickerScreen(initialTime: alarm.time),
+        builder: (context) => AlarmTimePickerScreen(
+          initialTime: alarm.time,
+          initialTitle: alarm.title,
+        ),
       ),
     );
 
-    if (newTime != null) {
-      onTimeChanged(newTime);
+    if (alarmData != null) {
+      onAlarmChanged(alarmData);
     }
   }
 

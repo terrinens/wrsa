@@ -14,7 +14,6 @@ class AlarmManager {
     required int id,
     required DateTime dateTime,
     required String title,
-    required String body,
   }) async {
     final alarmSettings = AlarmSettings(
       id: id,
@@ -25,7 +24,7 @@ class AlarmManager {
       volume: 0.8,
       fadeDuration: 3.0,
       notificationTitle: title,
-      notificationBody: body,
+      notificationBody: '',
       enableNotificationOnKill: true,
       // 앱이 종료되어도 알람 울림
       androidFullScreenIntent: true,

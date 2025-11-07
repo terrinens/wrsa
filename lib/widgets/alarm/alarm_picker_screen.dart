@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:wrsa_app/models/alarm_data.dart';
+import 'package:wrsa_app/widgets/alarm/alarm_title_input_field.dart';
 
 class AlarmTimePickerScreen extends StatefulWidget {
   final TimeOfDay? initialTime;
+  final String? initialTitle;
 
-  const AlarmTimePickerScreen({super.key, this.initialTime});
+  const AlarmTimePickerScreen({super.key, this.initialTime, this.initialTitle});
 
   @override
   State<AlarmTimePickerScreen> createState() => _AlarmTimePickerScreenState();
@@ -13,11 +16,20 @@ class _AlarmTimePickerScreenState extends State<AlarmTimePickerScreen> {
   late int selectedHour;
   late int selectedMinute;
 
+  final TextEditingController _titleController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     selectedHour = widget.initialTime?.hour ?? 7;
     selectedMinute = widget.initialTime?.minute ?? 0;
+    _titleController.text = widget.initialTitle ?? '행동할 시간입니다!';
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
   }
 
   // FIX 1. 현재 시간,분 스크롤할 경우에 상단의 일정영역의 색이 바뀜.
@@ -64,15 +76,37 @@ class _AlarmTimePickerScreenState extends State<AlarmTimePickerScreen> {
             ),
           ),
 
+          AlarmInputField(labelText: 'labelText', controller: _titleController),
+
           // 저장, 취소 버튼
           _SaveCancelButton(
             hour: selectedHour,
             minute: selectedMinute,
-            onSave: (TimeOfDay time) {
-              Navigator.pop(context, time);
+            onSave: () {
+              // AlarmData 객체로 반환
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && Navigator.canPop(context)) {
+                  Navigator.pop(
+                    context,
+                    AlarmData(
+                      time: TimeOfDay(
+                        hour: selectedHour,
+                        minute: selectedMinute,
+                      ),
+                      title: _titleController.text.isEmpty
+                          ? '행동할 시간입니다!'
+                          : _titleController.text,
+                    ),
+                  );
+                }
+              });
             },
             onCancel: () {
-              Navigator.pop(context);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+              });
             },
           ),
         ],
@@ -88,7 +122,6 @@ class _TimePickerWheel extends StatelessWidget {
   final ValueChanged<int> onSelectedItemChanged;
 
   const _TimePickerWheel({
-    super.key,
     required this.itemCount,
     required this.initialItem,
     required this.selectedValue,
@@ -128,11 +161,11 @@ class _TimePickerWheel extends StatelessWidget {
   }
 }
 
-class _SaveCancelButton extends StatelessWidget {
+class _SaveCancelButton extends StatefulWidget {
   final int hour;
   final int minute;
 
-  final ValueChanged<TimeOfDay> onSave;
+  final VoidCallback onSave;
   final VoidCallback onCancel;
 
   const _SaveCancelButton({
@@ -142,6 +175,13 @@ class _SaveCancelButton extends StatelessWidget {
     required this.onCancel,
   });
 
+  @override
+  State<_SaveCancelButton> createState() => _SaveCancelButtonState();
+}
+
+class _SaveCancelButtonState extends State<_SaveCancelButton> {
+  bool _isProcessing = false;
+
   Widget _buildButton({
     required String title,
     required VoidCallback onPressed,
@@ -150,7 +190,16 @@ class _SaveCancelButton extends StatelessWidget {
       child: SizedBox(
         height: 40,
         child: ElevatedButton(
-          onPressed: onPressed,
+          onPressed: _isProcessing
+              ? null
+              : () {
+                  if (!_isProcessing) {
+                    setState(() {
+                      _isProcessing = true;
+                    });
+                    onPressed();
+                  }
+                },
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
@@ -179,16 +228,11 @@ class _SaveCancelButton extends StatelessWidget {
           _buildButton(
             title: '취소',
             onPressed: () {
-              onCancel();
+              widget.onCancel();
             },
           ),
           const SizedBox(width: 16),
-          _buildButton(
-            title: '저장',
-            onPressed: () {
-              onSave(TimeOfDay(hour: hour, minute: minute));
-            },
-          ),
+          _buildButton(title: '저장', onPressed: widget.onSave),
         ],
       ),
     );
