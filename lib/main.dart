@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wrsa_app/models/res_data.dart';
 import 'package:wrsa_app/utils/alarm.dart';
+import 'package:wrsa_app/utils/app_permission.dart';
 import 'package:wrsa_app/utils/areaGrid.dart';
 import 'package:wrsa_app/utils/data_sync.dart';
 import 'package:wrsa_app/widgets/alarm/alarm_list.dart';
@@ -12,12 +13,13 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppPermission.initialize();
   await AlarmManager.initialize();
 
   // 백그라운드에서도 작동하는 알람 리스너
   Alarm.ringStream.stream.listen((settings) {
     log.info('알람 작동 : ${settings.id}');
-    
+
     // 전역 네비게이터를 사용해서 화면 이동
     navigatorKey.currentState?.push(
       MaterialPageRoute(
