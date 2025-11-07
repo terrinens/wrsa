@@ -1,10 +1,9 @@
 import 'dart:async';
 
-import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 import 'package:wrsa_app/utils/alarm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wrsa_app/widgets/alarm/alarm_ring_screen.dart';
+import 'package:wrsa_app/widgets/alarm/alarm_picker_screen.dart';
 import 'dart:convert';
 
 class AlarmList extends StatefulWidget {
@@ -86,9 +85,10 @@ class _AlarmListState extends State<AlarmList> {
   }
 
   Future<void> _addAlarm() async {
-    final TimeOfDay? selectedTime = await _showTimePickerDialog(
+    // 페이지 이동 방식으로 변경
+    final TimeOfDay? selectedTime = await Navigator.push<TimeOfDay>(
       context,
-      const TimeOfDay(hour: 7, minute: 0),
+      MaterialPageRoute(builder: (context) => const AlarmTimePickerScreen()),
     );
 
     if (selectedTime != null) {
@@ -104,128 +104,6 @@ class _AlarmListState extends State<AlarmList> {
 
       await _saveAlarms();
     }
-  }
-
-  Future<TimeOfDay?> _showTimePickerDialog(
-    BuildContext context,
-    TimeOfDay initialTime,
-  ) async {
-    int tempHour = initialTime.hour;
-    int tempMinute = initialTime.minute;
-
-    return await showDialog<TimeOfDay>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('시간 선택'),
-              content: SizedBox(
-                height: 200,
-                width: 200,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: ListWheelScrollView.useDelegate(
-                        itemExtent: 50,
-                        perspective: 0.005,
-                        diameterRatio: 1.2,
-                        physics: const FixedExtentScrollPhysics(),
-                        controller: FixedExtentScrollController(
-                          initialItem: tempHour,
-                        ),
-                        onSelectedItemChanged: (index) {
-                          setDialogState(() {
-                            tempHour = index;
-                          });
-                        },
-                        childDelegate: ListWheelChildBuilderDelegate(
-                          childCount: 24,
-                          builder: (context, index) {
-                            return Center(
-                              child: Text(
-                                index.toString().padLeft(2, '0'),
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: tempHour == index
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: tempHour == index
-                                      ? Colors.blue
-                                      : Colors.black54,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const Text(
-                      ':',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Expanded(
-                      child: ListWheelScrollView.useDelegate(
-                        itemExtent: 50,
-                        perspective: 0.005,
-                        diameterRatio: 1.2,
-                        physics: const FixedExtentScrollPhysics(),
-                        controller: FixedExtentScrollController(
-                          initialItem: tempMinute,
-                        ),
-                        onSelectedItemChanged: (index) {
-                          setDialogState(() {
-                            tempMinute = index;
-                          });
-                        },
-                        childDelegate: ListWheelChildBuilderDelegate(
-                          childCount: 60,
-                          builder: (context, index) {
-                            return Center(
-                              child: Text(
-                                index.toString().padLeft(2, '0'),
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: tempMinute == index
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: tempMinute == index
-                                      ? Colors.blue
-                                      : Colors.black54,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, null),
-                  child: const Text('취소'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(
-                      context,
-                      TimeOfDay(hour: tempHour, minute: tempMinute),
-                    );
-                  },
-                  child: const Text('확인'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
   }
 
   void _removeAlarm(int id) async {
@@ -246,37 +124,7 @@ class _AlarmListState extends State<AlarmList> {
       mainAxisSize: MainAxisSize.min,
       children: [
         // 알람 추가 버튼
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _addAlarm,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-              child: Row(
-                children: [
-                  Container(
-                    width: 25,
-                    height: 25,
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.add,
-                      color: Colors.white,
-                      weight: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Text(
-                    '알람 추가',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        AlarmAddButton(addAlarm: _addAlarm),
         const Divider(height: 1),
         // 알람 리스트
         ...alarms.map(
@@ -304,10 +152,47 @@ class _AlarmListState extends State<AlarmList> {
               });
               await _saveAlarms();
             },
-            showTimePickerDialog: _showTimePickerDialog,
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 알람을 추가 할 수 있는 버튼입니다.
+class AlarmAddButton extends StatelessWidget {
+  final VoidCallback addAlarm;
+
+  const AlarmAddButton({super.key, required this.addAlarm});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: addAlarm,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          child: Row(
+            children: [
+              Container(
+                width: 25,
+                height: 25,
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, weight: 20),
+              ),
+              const SizedBox(width: 16),
+              const Text(
+                '알람 추가',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -344,8 +229,6 @@ class AlarmItemWidget extends StatelessWidget {
   final VoidCallback onDelete;
   final Function(TimeOfDay) onTimeChanged;
   final Function(bool) onToggle;
-  final Future<TimeOfDay?> Function(BuildContext, TimeOfDay)
-  showTimePickerDialog;
 
   const AlarmItemWidget({
     super.key,
@@ -353,11 +236,17 @@ class AlarmItemWidget extends StatelessWidget {
     required this.onDelete,
     required this.onTimeChanged,
     required this.onToggle,
-    required this.showTimePickerDialog,
   });
 
   Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? newTime = await showTimePickerDialog(context, alarm.time);
+    // 페이지 이동 방식으로 변경
+    final TimeOfDay? newTime = await Navigator.push<TimeOfDay>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AlarmTimePickerScreen(initialTime: alarm.time),
+      ),
+    );
+
     if (newTime != null) {
       onTimeChanged(newTime);
     }
