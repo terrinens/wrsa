@@ -20,6 +20,7 @@ class _AlarmTimePickerScreenState extends State<AlarmTimePickerScreen> {
     selectedMinute = widget.initialTime?.minute ?? 0;
   }
 
+  // FIX 1. 현재 시간,분 스크롤할 경우에 상단의 일정영역의 색이 바뀜.
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.initialTime != null;
@@ -27,92 +28,36 @@ class _AlarmTimePickerScreenState extends State<AlarmTimePickerScreen> {
       appBar: AppBar(title: Text(isEditMode ? '알람 시간 수정' : '알람 추가')),
       body: Column(
         children: [
+          // 시간선택
           Expanded(
             child: Center(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 시간 선택
-                  SizedBox(
-                    width: 120,
-                    height: 300,
-                    child: ListWheelScrollView.useDelegate(
-                      itemExtent: 60,
-                      perspective: 0.005,
-                      diameterRatio: 1.2,
-                      physics: const FixedExtentScrollPhysics(),
-                      controller: FixedExtentScrollController(
-                        initialItem: selectedHour,
-                      ),
-                      onSelectedItemChanged: (index) {
-                        setState(() {
-                          selectedHour = index;
-                        });
-                      },
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        childCount: 24,
-                        builder: (context, index) {
-                          final isSelected = selectedHour == index;
-                          return Center(
-                            child: Text(
-                              index.toString().padLeft(2, '0'),
-                              style: TextStyle(
-                                fontSize: isSelected ? 48 : 32,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                color: isSelected
-                                    ? Colors.blue
-                                    : Colors.black54,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                  _TimePickerWheel(
+                    itemCount: 24,
+                    initialItem: selectedHour,
+                    selectedValue: selectedHour,
+                    onSelectedItemChanged: (index) {
+                      setState(() {
+                        selectedHour = index;
+                      });
+                    },
                   ),
                   const Text(
                     ':',
                     style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
                   ),
-                  // 분 선택
-                  SizedBox(
-                    width: 120,
-                    height: 300,
-                    child: ListWheelScrollView.useDelegate(
-                      itemExtent: 60,
-                      perspective: 0.005,
-                      diameterRatio: 1.2,
-                      physics: const FixedExtentScrollPhysics(),
-                      controller: FixedExtentScrollController(
-                        initialItem: selectedMinute,
-                      ),
-                      onSelectedItemChanged: (index) {
-                        setState(() {
-                          selectedMinute = index;
-                        });
-                      },
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        childCount: 60,
-                        builder: (context, index) {
-                          final isSelected = selectedMinute == index;
-                          return Center(
-                            child: Text(
-                              index.toString().padLeft(2, '0'),
-                              style: TextStyle(
-                                fontSize: isSelected ? 48 : 32,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                color: isSelected
-                                    ? Colors.blue
-                                    : Colors.black54,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                  // ✨ 분 선택기를 TimePickerWheel 위젯으로 호출 ✨
+                  _TimePickerWheel(
+                    itemCount: 60,
+                    initialItem: selectedMinute,
+                    selectedValue: selectedMinute,
+                    onSelectedItemChanged: (index) {
+                      setState(() {
+                        selectedMinute = index;
+                      });
+                    },
                   ),
                 ],
               ),
@@ -120,7 +65,7 @@ class _AlarmTimePickerScreenState extends State<AlarmTimePickerScreen> {
           ),
 
           // 저장, 취소 버튼
-          SaveCancelButton(
+          _SaveCancelButton(
             hour: selectedHour,
             minute: selectedMinute,
             onSave: (TimeOfDay time) {
@@ -136,15 +81,61 @@ class _AlarmTimePickerScreenState extends State<AlarmTimePickerScreen> {
   }
 }
 
-class SaveCancelButton extends StatelessWidget {
+class _TimePickerWheel extends StatelessWidget {
+  final int itemCount;
+  final int initialItem;
+  final int selectedValue;
+  final ValueChanged<int> onSelectedItemChanged;
+
+  const _TimePickerWheel({
+    super.key,
+    required this.itemCount,
+    required this.initialItem,
+    required this.selectedValue,
+    required this.onSelectedItemChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 120,
+      height: 300,
+      child: ListWheelScrollView.useDelegate(
+        itemExtent: 60,
+        perspective: 0.005,
+        diameterRatio: 1.2,
+        physics: const FixedExtentScrollPhysics(),
+        controller: FixedExtentScrollController(initialItem: initialItem),
+        onSelectedItemChanged: onSelectedItemChanged,
+        childDelegate: ListWheelChildBuilderDelegate(
+          childCount: itemCount,
+          builder: (context, index) {
+            final isSelected = selectedValue == index;
+            return Center(
+              child: Text(
+                index.toString().padLeft(2, '0'),
+                style: TextStyle(
+                  fontSize: isSelected ? 48 : 32,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? Colors.blue : Colors.black54,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SaveCancelButton extends StatelessWidget {
   final int hour;
   final int minute;
 
   final ValueChanged<TimeOfDay> onSave;
   final VoidCallback onCancel;
 
-  const SaveCancelButton({
-    super.key,
+  const _SaveCancelButton({
     required this.hour,
     required this.minute,
     required this.onSave,
