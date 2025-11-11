@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';
 
 class AppPermission {
   static Future<void> initialize() async {
@@ -26,6 +27,11 @@ class AppPermission {
       if (status.isDenied) {
         await openAppSettings();
       }
+    }
+
+    // 4. 백그라운드 스케쥴링 권한
+    if (await Permission.ignoreBatteryOptimizations.isDenied) {
+      await Permission.ignoreBatteryOptimizations.request();
     }
   }
 }

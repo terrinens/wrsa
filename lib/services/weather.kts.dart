@@ -6,12 +6,14 @@ import 'dart:io';
 
 import 'package:wrsa_app/models/res_data.dart';
 
+import '../utils/areaGrid.dart';
+
 final log = Logger('weather api');
 const apiUrl = "https://weather-api-server-3spkai4ruq-dt.a.run.app";
 
-Future<List<ResData>> getData(int nx, int ny) async {
+Future<List<ResData>> getData(RepresentativeGrid grid) async {
   try {
-    var url = Uri.parse('$apiUrl?nx=$nx&ny=$ny');
+    var url = Uri.parse('$apiUrl?nx=${grid.nx}&ny=${grid.ny}');
     var response = await http.get(url).timeout(const Duration(seconds: 10));
 
     if (response.statusCode != HttpStatus.ok) {

@@ -59,7 +59,7 @@ class MainTemperatureDisplay extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         TemperatureText(temper: temper, cloud: sky.toString()),
-        WeatherIcon(sky: sky),
+        WeatherIcon(sky: sky, size: 60),
       ],
     );
   }
@@ -80,13 +80,13 @@ class TemperatureText extends StatelessWidget {
         Text(
           '$temper°C',
           style: const TextStyle(
-            fontSize: 80,
+            fontSize: 50,
             fontWeight: FontWeight.bold,
             height: 1,
           ),
         ),
         const SizedBox(height: 10),
-        Text(cloud, style: TextStyle(fontSize: 18, color: Colors.grey)),
+        Text(cloud, style: TextStyle(fontSize: 16, color: Colors.grey)),
       ],
     );
   }

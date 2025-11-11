@@ -36,14 +36,14 @@ const representativeGrids = [
   RepresentativeGrid(areaCode: "5200000000", name: "전북특별자치도", nx: 63, ny: 89),
 ];
 
-RepresentativeGrid getAreaCodeFromGrid(int targetNx, int targetNy) {
+RepresentativeGrid getAreaCodeFromGrid(int nx, int ny) {
   double minDistance = double.infinity;
   RepresentativeGrid data = representativeGrids[0];
 
   for (final gridInfo in representativeGrids) {
     // 격자 좌표 간 유클리드 거리 calculate
-    final dx = (targetNx - gridInfo.nx).toDouble();
-    final dy = (targetNy - gridInfo.ny).toDouble();
+    final dx = (nx - gridInfo.nx).toDouble();
+    final dy = (ny - gridInfo.ny).toDouble();
 
     final distance = sqrt(pow(dx, 2) + pow(dy, 2));
 

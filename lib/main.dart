@@ -3,24 +3,36 @@ import 'package:wrsa_app/models/res_data.dart';
 import 'package:wrsa_app/utils/alarm.dart';
 import 'package:wrsa_app/utils/app_permission.dart';
 import 'package:wrsa_app/utils/areaGrid.dart';
-import 'package:wrsa_app/utils/data_sync.dart';
+import 'package:wrsa_app/utils/background/data_sync.dart';
 import 'package:wrsa_app/widgets/alarm/alarm_list.dart';
 import 'package:wrsa_app/widgets/alarm/alarm_ring_screen.dart';
 import 'package:wrsa_app/theme/colors.dart' as custom_colors;
 import 'package:alarm/alarm.dart';
+import 'package:wrsa_app/widgets/weather/location.dart';
+import 'package:wrsa_app/widgets/weather/temper.dart';
+import 'package:wrsa_app/widgets/weather/weather.dart';
+
+import 'constants/cloud.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+late final DataSyncManager dataManger;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppPermission.initialize();
   await AlarmManager.initialize();
 
+  // DataSyncManager 초기화 (매일 새벽 4시)
+  final grid = getAreaCodeFromGrid(60, 127);
+  dataManger = DataSyncManager(
+    grid: grid,
+    scheduleHour: 4,
+    scheduleMinute: 0,
+  );
+  await dataManger.init();
+
   // 백그라운드에서도 작동하는 알람 리스너
   Alarm.ringStream.stream.listen((settings) {
-    log.info('알람 작동 : ${settings.id}');
-
-    // 전역 네비게이터를 사용해서 화면 이동
     navigatorKey.currentState?.push(
       MaterialPageRoute(
         fullscreenDialog: true,
@@ -50,8 +62,8 @@ class WeatherHomePage extends StatelessWidget {
 
   Future<ResData> loadWeatherData() async {
     final grid = getAreaCodeFromGrid(60, 127);
-    final date = '20251107';
-    return await getData(date, grid);
+    final date = '20251110';
+    return await dataManger.getData(date, grid);
   }
 
   @override
@@ -82,7 +94,7 @@ class WeatherHomePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /*LocationDateRow(location: data.name, syncTime: 'test1'),
+                    LocationDateRow(location: data.name, syncTime: 'test1'),
                     SizedBox(height: 40),
                     MainTemperatureDisplay(
                       sky: Sky.fromValue(data.sky),
@@ -90,7 +102,7 @@ class WeatherHomePage extends StatelessWidget {
                     ),
                     SizedBox(height: 30),
                     WeatherDetailsGrid(wash: data.wash, wind: data.wind),
-                    SizedBox(height: 30),*/
+                    SizedBox(height: 30),
                     AlarmList(),
                   ],
                 ),

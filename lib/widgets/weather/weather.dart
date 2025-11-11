@@ -5,16 +5,22 @@ import 'package:wrsa_app/constants/cloud.dart';
 // 날씨 아이콘 위젯
 class WeatherIcon extends StatelessWidget {
   final Sky sky;
+  final double size;
 
-  const WeatherIcon({super.key, required this.sky});
+  const WeatherIcon({super.key, required this.sky, this.size = 80});
 
   @override
   Widget build(BuildContext context) {
+    const double paddingFactor = 0.3;
+    final double horizontalPadding = size * paddingFactor;
+    final double verticalPadding = size * paddingFactor;
     return Container(
-      width: 120,
-      height: 120,
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       decoration: BoxDecoration(color: Colors.blue[50], shape: BoxShape.circle),
-      child: Icon(sky.toIcon().icon, size: 80),
+      child: Icon(sky.toIcon().icon, size: size),
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wrsa_app/utils/areaGrid.dart';
-import 'package:wrsa_app/utils/data_sync.dart';
+import 'package:wrsa_app/utils/background/data_sync.dart';
 import 'dart:io';
 import 'dart:convert' as convert;
 import 'package:wrsa_app/models/res_data.dart';
@@ -17,7 +17,7 @@ void main() {
     });
 
     testWidgets('local del test', (tester) async {
-      await delData('20251107');
+      await _delData('20251107');
       log.info('로컬 데이터 삭제 테스트 성공');
     });
   });
@@ -37,5 +37,5 @@ Future<void> localSyncTest() async {
 
   final grid = getAreaCodeFromGrid(60, 127);
 
-  localSync(data, grid);
+  _localSync(data, grid);
 }
