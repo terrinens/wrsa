@@ -1,9 +1,8 @@
 import 'dart:convert' as convert;
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
-import 'dart:io';
-
 import 'package:wrsa_app/models/res_data.dart';
 
 import '../utils/areaGrid.dart';

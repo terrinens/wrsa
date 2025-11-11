@@ -1,11 +1,11 @@
+import 'dart:convert' as convert;
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:wrsa_app/models/res_data.dart';
 import 'package:wrsa_app/utils/areaGrid.dart';
 import 'package:wrsa_app/utils/background/data_sync.dart';
-import 'dart:io';
-import 'dart:convert' as convert;
-import 'package:wrsa_app/models/res_data.dart';
-
-import 'package:integration_test/integration_test.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

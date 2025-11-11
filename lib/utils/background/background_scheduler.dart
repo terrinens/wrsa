@@ -1,5 +1,5 @@
-import 'package:logging/logging.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:logging/logging.dart';
 import 'package:wrsa_app/utils/background/data_sync.dart';
 
 final Logger log = Logger('BackgroundScheduler');

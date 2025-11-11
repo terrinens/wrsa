@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/services.dart';
 
 class AppPermission {
   static Future<void> initialize() async {

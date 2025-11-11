@@ -1,6 +1,6 @@
 import 'package:logging/logging.dart';
-import 'package:wrsa_app/services/weather.kts.dart' as weather;
 import 'package:wrsa_app/main.dart';
+import 'package:wrsa_app/services/weather.kts.dart' as weather;
 import 'package:wrsa_app/utils/background/data_sync.dart';
 
 import '../lib/utils/log.dart';

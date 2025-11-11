@@ -1,17 +1,16 @@
-import 'dart:io';
-import 'dart:convert' as convert;
 import 'dart:async';
+import 'dart:convert' as convert;
+import 'dart:io';
 
+import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wrsa_app/models/res_data.dart';
-import 'package:wrsa_app/services/weather.kts.dart';
-import 'package:logging/logging.dart';
-import 'package:wrsa_app/utils/areaGrid.dart';
-import 'package:path/path.dart' as p;
 import 'package:wrsa_app/services/weather.kts.dart' as wa;
+import 'package:wrsa_app/utils/areaGrid.dart';
 import 'package:wrsa_app/utils/background/background_scheduler.dart';
-import 'package:intl/intl.dart';
 
 final log = Logger('data sync');
 

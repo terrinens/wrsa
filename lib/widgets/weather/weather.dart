@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart' hide VerticalDivider;
-import 'package:wrsa_app/widgets/divider.dart';
 import 'package:wrsa_app/constants/cloud.dart';
+import 'package:wrsa_app/widgets/divider.dart';
 
 // 날씨 아이콘 위젯
 class WeatherIcon extends StatelessWidget {
