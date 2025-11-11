@@ -103,7 +103,7 @@ class DataSyncManager {
   }
 
   /// 고유한 디렉토리에서 data를 기반으로 파일을 가져오고, ResData 형태로 반환합니다.
-  Future<ResData> getData(String date, RepresentativeGrid grid) async {
+  Future<ResData?> getData(String date, RepresentativeGrid grid) async {
     try {
       final dir = await _savePath(grid.areaCode);
       final file = File(p.absolute(dir.path, date));
@@ -114,10 +114,10 @@ class DataSyncManager {
         return ResData.fromJson(json);
       }
 
-      return getDummy();
+      return null;
     } catch (e) {
       log.warning('로컬 데이터를 읽는데 실패했습니다. : $e');
-      return getDummy();
+      return null;
     }
   }
 

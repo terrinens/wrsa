@@ -1,5 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
 import 'package:wrsa_app/models/res_data.dart';
+import 'package:wrsa_app/services/weather.kts.dart';
 import 'package:wrsa_app/utils/alarm.dart';
 import 'package:wrsa_app/utils/app_permission.dart';
 import 'package:wrsa_app/utils/areaGrid.dart';
@@ -17,19 +21,41 @@ import 'constants/cloud.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 late final DataSyncManager dataManger;
 
+late final Logger log;
+
 void main() async {
+  logInit();
   WidgetsFlutterBinding.ensureInitialized();
   await AppPermission.initialize();
-  await AlarmManager.initialize();
 
-  // DataSyncManager 초기화 (매일 새벽 4시)
+  try {
+    await AlarmManager.initialize();
+    log.info('알람 매니저 초기화 완료');
+  } catch (e) {
+    log.warning('알람 매니저 초기화 오류 발생 : $e');
+  }
+
+  // TODO 위치를 변경할수 있게 설계할것
   final grid = getAreaCodeFromGrid(60, 127);
-  dataManger = DataSyncManager(
-    grid: grid,
-    scheduleHour: 4,
-    scheduleMinute: 0,
-  );
+  dataManger = DataSyncManager(grid: grid, scheduleHour: 4, scheduleMinute: 0);
   await dataManger.init();
+
+  final today = DateFormat('yyyyMMdd').format(DateTime.now());
+  var data = await dataManger.getData(today, grid);
+
+  if (data == null) {
+    log.info('초기 데이터 존재하지 않음. 동기화 시도');
+    await dataManger.manualSync();
+
+    data = await dataManger.getData(today, grid);
+    if (data != null) {
+      log.info('동기화 완료. 데이터 로드 성공: ${data.fcstDate}');
+    } else {
+      log.warning('동기화 했지만 데이터를 찾을 수 없음');
+    }
+  }
+
+  await AlarmManager.initialize();
 
   // 백그라운드에서도 작동하는 알람 리스너
   Alarm.ringStream.stream.listen((settings) {
@@ -42,6 +68,17 @@ void main() async {
   });
 
   runApp(const WeatherApp());
+}
+
+void logInit() {
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    if (kDebugMode) {
+      print('[${record.level.name}] ${record.loggerName}: ${record.message}');
+    }
+  });
+
+  log = Logger('wrsa main');
 }
 
 class WeatherApp extends StatelessWidget {
@@ -57,13 +94,26 @@ class WeatherApp extends StatelessWidget {
   }
 }
 
-class WeatherHomePage extends StatelessWidget {
+class WeatherHomePage extends StatefulWidget {
   const WeatherHomePage({super.key});
 
-  Future<ResData> loadWeatherData() async {
+  @override
+  State<StatefulWidget> createState() => _WeatherHomePageState();
+}
+
+class _WeatherHomePageState extends State<WeatherHomePage> {
+  late Future<ResData> _weatherDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _weatherDataFuture = _loadWeatherData();
+  }
+
+  Future<ResData> _loadWeatherData() async {
     final grid = getAreaCodeFromGrid(60, 127);
-    final date = '20251110';
-    return await dataManger.getData(date, grid);
+    final today = DateFormat('yyyyMMdd').format(DateTime.now());
+    return await dataManger.getData(today, grid) ?? getDummy();
   }
 
   @override
@@ -71,7 +121,7 @@ class WeatherHomePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: custom_colors.backgroundWhite,
       body: FutureBuilder<ResData>(
-        future: loadWeatherData(),
+        future: _weatherDataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
