@@ -42,8 +42,6 @@ class _AlarmTimePickerScreenState extends State<AlarmTimePickerScreen> {
         children: [
           SizedBox(height: 30),
 
-          AlarmInputField(labelText: '알람 이름', controller: _titleController),
-
           // 시간선택
           Expanded(
             child: Center(
@@ -79,6 +77,8 @@ class _AlarmTimePickerScreenState extends State<AlarmTimePickerScreen> {
               ),
             ),
           ),
+
+          AlarmInputField(labelText: '알람 이름', controller: _titleController),
 
           // 저장, 취소 버튼
           _SaveCancelButton(
