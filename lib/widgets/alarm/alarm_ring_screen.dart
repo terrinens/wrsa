@@ -35,14 +35,14 @@ class AlarmRingScreen extends StatelessWidget {
 
               // 알람 제목
               Text(
-                alarmSettings.notificationTitle,
+                alarmSettings.notificationSettings.title,
                 style: const TextStyle(fontSize: 24, color: Colors.white70),
               ),
               const SizedBox(height: 8),
 
               // 알람 내용
               Text(
-                alarmSettings.notificationBody,
+                alarmSettings.notificationSettings.body,
                 style: const TextStyle(fontSize: 16, color: Colors.white54),
                 textAlign: TextAlign.center,
               ),
@@ -84,16 +84,11 @@ class AlarmRingScreen extends StatelessWidget {
 
                   await Alarm.stop(alarmSettings.id);
 
-                  final snoozeSettings = AlarmSettings(
-                    id: alarmSettings.id,
-                    dateTime: snoozeTime,
-                    loopAudio: alarmSettings.loopAudio,
-                    vibrate: alarmSettings.vibrate,
-                    notificationTitle: alarmSettings.notificationTitle,
-                    notificationBody: '5분 후 다시 알림',
-                    enableNotificationOnKill:
-                        alarmSettings.enableNotificationOnKill,
-                    assetAudioPath: getAlarmSound(),
+                  final snoozeSettings = AlarmManager.copyWith(
+                    alarmSettings,
+                    snoozeTime,
+                    alarmSettings.notificationSettings.title,
+                    '5분 후 다시 알림',
                   );
 
                   await Alarm.set(alarmSettings: snoozeSettings);

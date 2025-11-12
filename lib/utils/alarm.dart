@@ -21,13 +21,15 @@ class AlarmManager {
       assetAudioPath: getAlarmSound(),
       loopAudio: true,
       vibrate: true,
-      volume: 0.8,
-      fadeDuration: 3.0,
-      notificationTitle: title,
-      notificationBody: '',
-      enableNotificationOnKill: true,
-      // 앱이 종료되어도 알람 울림
       androidFullScreenIntent: true,
+      volumeSettings: VolumeSettings.fade(
+        fadeDuration: Duration(seconds: 5),
+        volume: 0.8,
+      ),
+      notificationSettings: NotificationSettings(title: title, body: ''),
+      androidStopAlarmOnTermination: false,
+      // TEST 앱이 종료되어도 알람 울림 ??
+      warningNotificationOnKill: true,
     );
 
     await Alarm.set(alarmSettings: alarmSettings);
@@ -39,17 +41,41 @@ class AlarmManager {
 
   static Future<void> cancelAllAlarms() async {
     // 모든 알람 ID 가져오기
-    final alarms = Alarm.getAlarms();
+    final alarms = await Alarm.getAlarms();
     for (var alarm in alarms) {
       await Alarm.stop(alarm.id);
     }
   }
 
-  static List<AlarmSettings> getAllAlarms() {
+  static Future<List<AlarmSettings>> getAllAlarms() {
     return Alarm.getAlarms();
   }
 
-  static bool isRinging(int id) {
-    return Alarm.getAlarms().any((alarm) => alarm.id == id);
+  static Future<bool> isRinging(int id) async {
+    var alarms = await Alarm.getAlarms();
+    return alarms.any((alarm) => alarm.id == id);
+  }
+
+  static AlarmSettings copyWith(
+    AlarmSettings setting,
+    DateTime dateTime,
+    String title,
+    String body,
+  ) {
+    return AlarmSettings(
+      id: setting.id,
+      dateTime: dateTime,
+      assetAudioPath: setting.assetAudioPath,
+      loopAudio: setting.loopAudio,
+      vibrate: setting.vibrate,
+      androidFullScreenIntent: setting.androidFullScreenIntent,
+      volumeSettings: setting.volumeSettings,
+      notificationSettings: NotificationSettings(
+        title: setting.notificationSettings.title,
+        body: body,
+      ),
+      androidStopAlarmOnTermination: setting.androidStopAlarmOnTermination,
+      warningNotificationOnKill: setting.warningNotificationOnKill,
+    );
   }
 }
