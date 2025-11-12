@@ -9,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wrsa_app/models/res_data.dart';
 import 'package:wrsa_app/services/weather.kts.dart' as wa;
-import 'package:wrsa_app/utils/areaGrid.dart';
+import 'package:wrsa_app/utils/area_grid.dart';
 import 'package:wrsa_app/utils/background/background_scheduler.dart';
 
 final log = Logger('data sync');

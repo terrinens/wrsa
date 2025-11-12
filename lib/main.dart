@@ -8,7 +8,7 @@ import 'package:wrsa_app/services/weather.kts.dart';
 import 'package:wrsa_app/theme/colors.dart' as custom_colors;
 import 'package:wrsa_app/utils/alarm.dart';
 import 'package:wrsa_app/utils/app_permission.dart';
-import 'package:wrsa_app/utils/areaGrid.dart';
+import 'package:wrsa_app/utils/area_grid.dart';
 import 'package:wrsa_app/utils/background/data_sync.dart';
 import 'package:wrsa_app/widgets/alarm/alarm_list.dart';
 import 'package:wrsa_app/widgets/alarm/alarm_ring_screen.dart';
@@ -55,16 +55,16 @@ void main() async {
     }
   }
 
-  await AlarmManager.initialize();
-
   // 백그라운드에서도 작동하는 알람 리스너
-  Alarm.ringStream.stream.listen((settings) {
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (context) => AlarmRingScreen(alarmSettings: settings),
-      ),
-    );
+  Alarm.ringing.listen((alarmSet) {
+    for (final setting in alarmSet.alarms) {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (context) => AlarmRingScreen(setting: setting),
+        ),
+      );
+    }
   });
 
   runApp(const WeatherApp());

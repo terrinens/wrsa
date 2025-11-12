@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:wrsa_app/models/res_data.dart';
 
-import '../utils/areaGrid.dart';
+import '../utils/area_grid.dart';
 
 final log = Logger('weather api');
 const apiUrl = "https://weather-api-server-3spkai4ruq-dt.a.run.app";

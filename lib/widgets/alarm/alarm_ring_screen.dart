@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:wrsa_app/utils/alarm.dart';
 
 class AlarmRingScreen extends StatelessWidget {
-  final AlarmSettings alarmSettings;
+  final AlarmSettings setting;
 
-  const AlarmRingScreen({super.key, required this.alarmSettings});
+  const AlarmRingScreen({super.key, required this.setting});
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +22,8 @@ class AlarmRingScreen extends StatelessWidget {
 
               // 시간 표시
               Text(
-                '${alarmSettings.dateTime.hour.toString().padLeft(2, '0')}:'
-                '${alarmSettings.dateTime.minute.toString().padLeft(2, '0')}',
+                '${setting.dateTime.hour.toString().padLeft(2, '0')}:'
+                '${setting.dateTime.minute.toString().padLeft(2, '0')}',
                 style: const TextStyle(
                   fontSize: 72,
                   fontWeight: FontWeight.w300,
@@ -35,14 +35,14 @@ class AlarmRingScreen extends StatelessWidget {
 
               // 알람 제목
               Text(
-                alarmSettings.notificationSettings.title,
+                setting.notificationSettings.title,
                 style: const TextStyle(fontSize: 24, color: Colors.white70),
               ),
               const SizedBox(height: 8),
 
               // 알람 내용
               Text(
-                alarmSettings.notificationSettings.body,
+                setting.notificationSettings.body,
                 style: const TextStyle(fontSize: 16, color: Colors.white54),
                 textAlign: TextAlign.center,
               ),
@@ -51,7 +51,7 @@ class AlarmRingScreen extends StatelessWidget {
               // 알람 끄기 버튼
               ElevatedButton(
                 onPressed: () async {
-                  await Alarm.stop(alarmSettings.id);
+                  await Alarm.stop(setting.id);
                   if (context.mounted) {
                     Navigator.pop(context);
                   }
@@ -82,12 +82,12 @@ class AlarmRingScreen extends StatelessWidget {
                     const Duration(minutes: 5),
                   );
 
-                  await Alarm.stop(alarmSettings.id);
+                  await Alarm.stop(setting.id);
 
                   final snoozeSettings = AlarmManager.copyWith(
-                    alarmSettings,
+                    setting,
                     snoozeTime,
-                    alarmSettings.notificationSettings.title,
+                    setting.notificationSettings.title,
                     '5분 후 다시 알림',
                   );
 

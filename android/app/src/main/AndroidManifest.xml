@@ -5,14 +5,16 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
     <application
-            android:label="wrsa_app"
+            android:label="WRSA"
             android:name="${applicationName}"
             android:icon="@mipmap/ic_launcher">
         <activity
@@ -45,6 +47,8 @@
                 android:name="flutterEmbedding"
                 android:value="2"/>
 
+        <service android:name="com.gdelataillade.alarm.services.NotificationOnKillService"/>
+
         <service
                 android:name="com.gdelataillade.alarm.alarm.AlarmService"
                 android:exported="false"
@@ -61,7 +65,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- android_alarm_manager_plus 설정 -->
+        <!-- android_alarm_manager_plus 설정 시작 -->
         <service
                 android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmService"
                 android:permission="android.permission.BIND_JOB_SERVICE"
@@ -79,7 +83,9 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
+        <!-- android_alarm_manager_plus 설정 끝 -->
     </application>
+
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
          https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
