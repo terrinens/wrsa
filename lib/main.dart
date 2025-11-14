@@ -24,16 +24,9 @@ late final DataSyncManager dataManger;
 late final Logger log;
 
 void main() async {
-  logInit();
+  _logInit();
   WidgetsFlutterBinding.ensureInitialized();
   await AppPermission.initialize();
-
-  try {
-    await AlarmManager.initialize();
-    log.info('알람 매니저 초기화 완료');
-  } catch (e) {
-    log.warning('알람 매니저 초기화 오류 발생 : $e');
-  }
 
   // TODO 위치를 변경할수 있게 설계할것
   final grid = getAreaCodeFromGrid(60, 127);
@@ -55,22 +48,13 @@ void main() async {
     }
   }
 
-  // 백그라운드에서도 작동하는 알람 리스너
-  Alarm.ringing.listen((alarmSet) {
-    for (final setting in alarmSet.alarms) {
-      navigatorKey.currentState?.push(
-        MaterialPageRoute(
-          fullscreenDialog: true,
-          builder: (context) => AlarmRingScreen(setting: setting),
-        ),
-      );
-    }
-  });
+  final AlarmManager alarmManager = AlarmManager();
+  _alarmInit(alarmManager);
 
-  runApp(const WeatherApp());
+  runApp(WeatherApp(alarmManager: alarmManager));
 }
 
-void logInit() {
+void _logInit() {
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     if (kDebugMode) {
@@ -81,21 +65,48 @@ void logInit() {
   log = Logger('wrsa main');
 }
 
+Future<void> _alarmInit(AlarmManager alarmManager) async {
+  try {
+    await Alarm.init();
+    alarmManager.loadAlarms();
+    log.info('알람 매니저 초기화 완료');
+  } catch (e) {
+    log.warning('알람 매니저 초기화 오류 발생 : $e');
+  }
+
+  // 백그라운드에서도 작동하는 알람 리스너
+  Alarm.ringing.listen((alarmSet) {
+    for (final setting in alarmSet.alarms) {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (context) =>
+              AlarmRingScreen(setting: setting, alarmManager: alarmManager),
+        ),
+      );
+    }
+  });
+}
+
 class WeatherApp extends StatelessWidget {
-  const WeatherApp({super.key});
+  final AlarmManager alarmManager;
+
+  const WeatherApp({super.key, required this.alarmManager});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey, // GlobalKey 연결
       debugShowCheckedModeBanner: false,
-      home: const WeatherHomePage(),
+      home: WeatherHomePage(alarmManager: alarmManager),
     );
   }
 }
 
 class WeatherHomePage extends StatefulWidget {
-  const WeatherHomePage({super.key});
+  final AlarmManager alarmManager;
+
+  const WeatherHomePage({super.key, required this.alarmManager});
 
   @override
   State<StatefulWidget> createState() => _WeatherHomePageState();
@@ -103,11 +114,13 @@ class WeatherHomePage extends StatefulWidget {
 
 class _WeatherHomePageState extends State<WeatherHomePage> {
   late Future<ResData> _weatherDataFuture;
+  late AlarmManager _alarmManager;
 
   @override
   void initState() {
     super.initState();
     _weatherDataFuture = _loadWeatherData();
+    _alarmManager = widget.alarmManager;
   }
 
   Future<ResData> _loadWeatherData() async {
@@ -153,7 +166,7 @@ class _WeatherHomePageState extends State<WeatherHomePage> {
                     SizedBox(height: 30),
                     WeatherDetailsGrid(wash: data.wash, wind: data.wind),
                     SizedBox(height: 30),
-                    AlarmList(),
+                    AlarmList(alarmManager: _alarmManager),
                   ],
                 ),
               ),

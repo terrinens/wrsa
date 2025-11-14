@@ -1,87 +1,54 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wrsa_app/models/alarm_data.dart';
+import 'package:wrsa_app/models/alarm_item.dart';
 import 'package:wrsa_app/utils/alarm.dart';
 import 'package:wrsa_app/widgets/alarm/alarm_picker_screen.dart';
 
 class AlarmList extends StatefulWidget {
-  const AlarmList({super.key});
+  final AlarmManager alarmManager;
+
+  const AlarmList({super.key, required this.alarmManager});
 
   @override
   State<AlarmList> createState() => _AlarmListState();
 }
 
-class _AlarmListState extends State<AlarmList> {
+class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
   List<AlarmItem> alarms = [];
   bool isLoading = true;
+  late AlarmManager alarmManager;
 
   @override
   void initState() {
     super.initState();
+    alarmManager = widget.alarmManager;
     _loadAlarms();
+
+    WidgetsBinding.instance.addObserver(this);
   }
 
-  // 다음 알람 ID 생성 (1부터 시작, Int 범위 내)
-  int _getNextAlarmId() {
-    if (alarms.isEmpty) {
-      return 1;
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadAlarms();
     }
-    return alarms.map((a) => a.id).reduce((a, b) => a > b ? a : b) + 1;
   }
 
-  // 저장된 알람 불러오기
   Future<void> _loadAlarms() async {
-    final prefs = await SharedPreferences.getInstance();
-    // await prefs.remove('alarms');
-    final alarmsJson = prefs.getStringList('alarms') ?? [];
+    await alarmManager.loadAlarms();
 
     setState(() {
-      alarms = alarmsJson
-          .map((json) => AlarmItem.fromJson(jsonDecode(json)))
-          .toList();
+      alarms = alarmManager.alarms;
       isLoading = false;
     });
-
-    // 활성화된 알람 재설정
-    for (var alarm in alarms) {
-      if (alarm.isEnabled) {
-        await _scheduleAlarm(alarm);
-      }
-    }
-  }
-
-  // 알람 저장
-  Future<void> _saveAlarms() async {
-    final prefs = await SharedPreferences.getInstance();
-    final alarmsJson = alarms
-        .map((alarm) => jsonEncode(alarm.toJson()))
-        .toList();
-    await prefs.setStringList('alarms', alarmsJson);
-  }
-
-  // 알람 스케줄 설정
-  Future<void> _scheduleAlarm(AlarmItem alarm) async {
-    final now = DateTime.now();
-    DateTime alarmTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      alarm.time.hour,
-      alarm.time.minute,
-    );
-
-    if (alarmTime.isBefore(now)) {
-      alarmTime = alarmTime.add(const Duration(days: 1));
-    }
-
-    await AlarmManager.setAlarm(
-      id: alarm.id,
-      dateTime: alarmTime,
-      title: alarm.title,
-    );
   }
 
   Future<void> _addAlarm() async {
@@ -93,26 +60,14 @@ class _AlarmListState extends State<AlarmList> {
 
     if (alarmData != null) {
       final newAlarm = AlarmItem(
-        id: _getNextAlarmId(),
+        id: alarmManager.getNextAlarmId(),
         title: alarmData.title,
         time: alarmData.time,
         isEnabled: false,
       );
 
-      setState(() {
-        alarms.add(newAlarm);
-      });
-
-      await _saveAlarms();
+      await alarmManager.setScheduleAlarm(newAlarm);
     }
-  }
-
-  void _removeAlarm(int id) async {
-    setState(() {
-      alarms.removeWhere((alarm) => alarm.id == id);
-    });
-    await AlarmManager.cancelAlarm(id);
-    await _saveAlarms();
   }
 
   @override
@@ -131,28 +86,27 @@ class _AlarmListState extends State<AlarmList> {
         ...alarms.map(
           (alarm) => AlarmItemWidget(
             alarm: alarm,
-            onDelete: () => _removeAlarm(alarm.id),
+            onDelete: () => alarmManager.cancelAlarm(alarm.id),
             onAlarmChanged: (alarmData) async {
               setState(() {
                 alarm.time = alarmData.time;
                 alarm.title = alarmData.title;
               });
+
               if (alarm.isEnabled) {
-                await _scheduleAlarm(alarm);
+                await alarmManager.setScheduleAlarm(alarm);
               }
-              await _saveAlarms();
             },
             onToggle: (value) async {
               if (value) {
-                await _scheduleAlarm(alarm);
+                await alarmManager.setScheduleAlarm(alarm);
               } else {
-                await AlarmManager.cancelAlarm(alarm.id);
+                await alarmManager.cancelAlarm(alarm.id);
               }
 
               setState(() {
                 alarm.isEnabled = value;
               });
-              await _saveAlarms();
             },
           ),
         ),
@@ -195,41 +149,6 @@ class AlarmAddButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class AlarmItem {
-  final int id;
-  String title;
-  TimeOfDay time;
-  bool isEnabled;
-
-  AlarmItem({
-    required this.id,
-    required this.title,
-    required this.time,
-    required this.isEnabled,
-  });
-
-  // JSON으로 변환
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'hour': time.hour,
-      'minute': time.minute,
-      'isEnabled': isEnabled,
-    };
-  }
-
-  // JSON에서 생성
-  factory AlarmItem.fromJson(Map<String, dynamic> json) {
-    return AlarmItem(
-      id: json['id'],
-      title: json['title'],
-      time: TimeOfDay(hour: json['hour'], minute: json['minute']),
-      isEnabled: json['isEnabled'],
     );
   }
 }

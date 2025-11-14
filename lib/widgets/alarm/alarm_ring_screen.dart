@@ -1,11 +1,17 @@
 import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
+import 'package:wrsa_app/models/alarm_item.dart';
 import 'package:wrsa_app/utils/alarm.dart';
 
 class AlarmRingScreen extends StatelessWidget {
   final AlarmSettings setting;
+  final AlarmManager alarmManager;
 
-  const AlarmRingScreen({super.key, required this.setting});
+  const AlarmRingScreen({
+    super.key,
+    required this.setting,
+    required this.alarmManager,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,21 +83,15 @@ class AlarmRingScreen extends StatelessWidget {
               // 다시 알림 버튼 (스누즈)
               TextButton(
                 onPressed: () async {
-                  // 5분 후 다시 알림
                   final snoozeTime = DateTime.now().add(
                     const Duration(minutes: 5),
                   );
-
-                  await Alarm.stop(setting.id);
-
-                  final snoozeSettings = AlarmManager.copyWith(
+                  _snoozeScheduleAlarm(
+                    alarmManager,
                     setting,
                     snoozeTime,
-                    setting.notificationSettings.title,
-                    '5분 후 다시 알림',
+                    '5분 후 알림입니다.',
                   );
-
-                  await Alarm.set(alarmSettings: snoozeSettings);
 
                   if (context.mounted) {
                     Navigator.pop(context);
@@ -111,4 +111,22 @@ class AlarmRingScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _snoozeScheduleAlarm(
+  AlarmManager alarmManager,
+  AlarmSettings setting,
+  DateTime snoozeTime,
+  String title,
+) async {
+  await alarmManager.cancelAlarm(setting.id);
+
+  final snoozeSettings = AlarmItem.toAlarmItem(
+    alarmSettings: setting,
+    dateTime: snoozeTime,
+    enabled: true,
+    title: title,
+  );
+
+  alarmManager.setScheduleAlarm(snoozeSettings);
 }
