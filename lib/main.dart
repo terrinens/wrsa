@@ -68,10 +68,9 @@ void _logInit() {
 Future<void> _alarmInit(AlarmManager alarmManager) async {
   try {
     await Alarm.init();
-    alarmManager.loadAlarms();
-    log.info('알람 매니저 초기화 완료');
+    log.info('알람 패키지 초기화 완료');
   } catch (e) {
-    log.warning('알람 매니저 초기화 오류 발생 : $e');
+    log.warning('알람 패키지 초기화 오류 발생 : $e');
   }
 
   // 백그라운드에서도 작동하는 알람 리스너

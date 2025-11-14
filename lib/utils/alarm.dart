@@ -13,7 +13,7 @@ String getAlarmSound() {
 
 class AlarmManager {
   late List<AlarmItem> alarms;
-  final Logger _log = Logger('AlarmManger');
+  static final Logger _log = Logger('AlarmManger');
 
   static Future<void> _setAlarm({
     required int id,
@@ -33,11 +33,15 @@ class AlarmManager {
       ),
       notificationSettings: NotificationSettings(title: title, body: ''),
       androidStopAlarmOnTermination: false,
-      // 앱 종료 경고. 백그라운드 작업이 되냐의 문제는 아직은 테스트해볼 여지가 남아있음.
-      // warningNotificationOnKill: true,
     );
 
-    await Alarm.set(alarmSettings: alarmSettings);
+    try {
+      _log.info('알람 세팅 : ${alarmSettings.dateTime}');
+      await Alarm.set(alarmSettings: alarmSettings);
+    } catch(e) {
+      _log.warning('알람 세팅중 오류 발생 ID : ${alarmSettings.id}');
+      _log.warning(e);
+    }
   }
 
   // 다음 알람 ID 생성 (1부터 시작, Int 범위 내)
@@ -94,6 +98,11 @@ class AlarmManager {
     alarms = alarmsJson
         .map((json) => AlarmItem.fromJson(jsonDecode(json)))
         .toList();
+
+    _log.info('저장된 알람 개수: ${alarmsJson.length}');
+    for (var json in alarmsJson) {
+      _log.info('저장된 알람: $json');
+    }
 
     // 활성화된 알람 재설정
     /*if (alarms.isNotEmpty) {

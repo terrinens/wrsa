@@ -249,3 +249,4 @@ fabric.properties
 /lib/dummy/
 /test/dummy/
 /integration_test/dummy/
+/.idea/IntelliLang.xml

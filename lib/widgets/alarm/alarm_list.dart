@@ -25,7 +25,6 @@ class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
     super.initState();
     alarmManager = widget.alarmManager;
     _loadAlarms();
-
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -86,7 +85,7 @@ class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
         ...alarms.map(
           (alarm) => AlarmItemWidget(
             alarm: alarm,
-            onDelete: () => alarmManager.cancelAlarm(alarm.id),
+            onDelete: () => alarmManager.removeAlarm(alarm.id),
             onAlarmChanged: (alarmData) async {
               setState(() {
                 alarm.time = alarmData.time;
