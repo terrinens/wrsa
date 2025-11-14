@@ -86,7 +86,8 @@ class AlarmRingScreen extends StatelessWidget {
                   final snoozeTime = DateTime.now().add(
                     const Duration(minutes: 5),
                   );
-                  _snoozeScheduleAlarm(
+
+                  await _snoozeScheduleAlarm(
                     alarmManager,
                     setting,
                     snoozeTime,
@@ -122,11 +123,12 @@ Future<void> _snoozeScheduleAlarm(
   await alarmManager.cancelAlarm(setting.id);
 
   final snoozeSettings = AlarmItem.toAlarmItem(
+    id: alarmManager.getNextAlarmId(),
     alarmSettings: setting,
     dateTime: snoozeTime,
     enabled: true,
     title: title,
   );
 
-  alarmManager.setScheduleAlarm(snoozeSettings);
+  await alarmManager.setScheduleAlarm(snoozeSettings);
 }

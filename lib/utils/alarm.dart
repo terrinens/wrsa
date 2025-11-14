@@ -11,7 +11,7 @@ String getAlarmSound() {
   return 'assets/audio/default.mp3';
 }
 
-class AlarmManager {
+class AlarmManager extends ChangeNotifier {
   late Set<AlarmItem> alarms;
   static final Logger _log = Logger('AlarmManger');
 
@@ -61,7 +61,8 @@ class AlarmManager {
 
       try {
         alarms.singleWhere((alarm) => alarm.id == id).isEnabled = false;
-        await _saveAlarmsInfo();
+        await _savePrefsFromAlarmsInfo();
+        _log.info('알람을 취소했습니다.');
       } catch (e) {
         _log.warning('알람을 취소 하는데 필요한 정보를 찾지 못했습니다. ID : $id');
       }
@@ -91,7 +92,7 @@ class AlarmManager {
       _log.info('알람 삭제 호출. ID : $id');
       cancelAlarm(id);
       alarms.removeWhere((alarm) => alarm.id == id);
-      await _saveAlarmsInfo();
+      await _savePrefsFromAlarmsInfo();
     } catch (e) {
       _log.warning('알람을 삭제하던 도중 실패했습니다. 실패 ID : $id');
       _log.warning(e);
@@ -116,7 +117,7 @@ class AlarmManager {
 
       await _setAlarm(id: alarm.id, dateTime: alarmTime, title: alarm.title);
       alarm.isEnabled = true;
-      await _saveAlarmsInfo();
+      await _savePrefsFromAlarmsInfo();
     } catch (e) {
       _log.warning('알람 활성화중 오류가 발생했습니다. ID : $id');
       if (alarms.where((alarm) => alarm.id == id).isEmpty) {
@@ -127,7 +128,7 @@ class AlarmManager {
   }
 
   /// 알람 정보를 공유 환경에서 가져오고, [alarms] 변수에 값을 할당합니다.
-  Future<void> loadAlarmsInfo() async {
+  Future<void> loadPrefsToAlarmsInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final alarmsJson = prefs.getStringList(_alarmSpName) ?? [];
 
@@ -135,11 +136,7 @@ class AlarmManager {
         .map((json) => AlarmItem.fromJson(jsonDecode(json)))
         .toSet();
 
-    _log.info('저장된 알람 개수: ${alarmsJson.length}');
-    for (var json in alarmsJson) {
-      _log.info('저장된 알람: $json');
-    }
-
+    _log.info('알람 정보가 재할당 되었습니다.');
     // 활성화된 알람 재설정
     /*if (alarms.isNotEmpty) {
       _log.info('알람 재설정');
@@ -152,12 +149,19 @@ class AlarmManager {
   }
 
   /// 알람 정보를 공유 환경에서 사용 할 수 있도록 [alarms]에 있는 정보를 변환하고, 공유 환경에 설정합니다.
-  Future<void> _saveAlarmsInfo() async {
+  Future<void> _savePrefsFromAlarmsInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final alarmsJson = alarms
         .map((alarm) => jsonEncode(alarm.toJson()))
         .toList();
     await prefs.setStringList(_alarmSpName, alarmsJson);
+
+    notifyListeners();
+    _log.info('공유 환경에 저장되었습니다.');
+    if (kDebugMode) {
+      _log.info('현재 설정된 알람은 ${alarms.length}개 있습니다.');
+      _log.info('알람 시간들: ${alarms.map((o) => o.time).join(', ')}');
+    }
   }
 
   /// 새 알람 스케줄을 등록합니다. 성공시 [alarm] 변수에 값 등록 및 공유 환경을 재설정합니다.
@@ -182,7 +186,7 @@ class AlarmManager {
       _log.info('새 알람 정보 저장중');
       alarms.add(alarm);
       _log.info('새 알람 정보 등록 성공');
-      await _saveAlarmsInfo();
+      await _savePrefsFromAlarmsInfo();
     } catch (e) {
       _log.warning('새 알람 등록 실패. 설정된 알람 삭제 $e');
       await removeAlarm(alarm.id);

@@ -25,11 +25,14 @@ class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
     super.initState();
     alarmManager = widget.alarmManager;
     _loadAlarms();
+
+    alarmManager.addListener(_refreshAlarms);
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    alarmManager.removeListener(_refreshAlarms);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -43,11 +46,18 @@ class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
 
   /// 알람 매니저의 정보를 갱신하고, 갱신된 정보를 [alarms]에 할당하여 사용 할 수 있도록 합니다.
   Future<void> _loadAlarms() async {
-    await alarmManager.loadAlarmsInfo();
+    await alarmManager.loadPrefsToAlarmsInfo();
 
     setState(() {
       alarms = alarmManager.alarms;
       isLoading = false;
+    });
+  }
+
+  /// AlarmManager의 alarms를 UI에 반영합니다.
+  void _refreshAlarms() {
+    setState(() {
+      alarms = alarmManager.alarms;
     });
   }
 
@@ -86,7 +96,9 @@ class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
         ...alarms.map(
           (alarm) => AlarmItemWidget(
             alarm: alarm,
-            onDelete: () => alarmManager.removeAlarm(alarm.id),
+            onDelete: () async {
+              await alarmManager.removeAlarm(alarm.id);
+            },
             onAlarmChanged: (alarmData) async {
               setState(() {
                 alarm.time = alarmData.time;
@@ -98,15 +110,9 @@ class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
               }
             },
             onToggle: (value) async {
-              if (value) {
-                await alarmManager.enableAlarm(alarm.id);
-              } else {
-                await alarmManager.cancelAlarm(alarm.id);
-              }
-
-              setState(() {
-                alarm.isEnabled = value;
-              });
+              value
+                  ? await alarmManager.enableAlarm(alarm.id)
+                  : await alarmManager.cancelAlarm(alarm.id);
             },
           ),
         ),

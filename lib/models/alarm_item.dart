@@ -46,6 +46,7 @@ class AlarmItem {
 
   static AlarmItem toAlarmItem({
     required AlarmSettings alarmSettings,
+    int? id,
     String? title,
     DateTime? dateTime,
     bool enabled = false,
@@ -55,7 +56,7 @@ class AlarmItem {
       minute: dateTime?.minute ?? alarmSettings.dateTime.minute,
     );
     return AlarmItem(
-      id: alarmSettings.id,
+      id: id ?? alarmSettings.id,
       title: title ?? alarmSettings.notificationSettings.title,
       time: timeOfDay,
       isEnabled: enabled,
