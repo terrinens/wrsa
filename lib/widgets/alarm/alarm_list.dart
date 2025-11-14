@@ -16,7 +16,7 @@ class AlarmList extends StatefulWidget {
 }
 
 class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
-  List<AlarmItem> alarms = [];
+  late Set<AlarmItem> alarms;
   bool isLoading = true;
   late AlarmManager alarmManager;
 
@@ -41,8 +41,9 @@ class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
     }
   }
 
+  /// 알람 매니저의 정보를 갱신하고, 갱신된 정보를 [alarms]에 할당하여 사용 할 수 있도록 합니다.
   Future<void> _loadAlarms() async {
-    await alarmManager.loadAlarms();
+    await alarmManager.loadAlarmsInfo();
 
     setState(() {
       alarms = alarmManager.alarms;
@@ -50,8 +51,8 @@ class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
     });
   }
 
+  /// '새'알람을 등록을 하기 위해 전용 페이지로 이동하고, 알람을 등록합니다.
   Future<void> _addAlarm() async {
-    // 페이지 이동 방식으로 변경
     final AlarmData? alarmData = await Navigator.push<AlarmData>(
       context,
       MaterialPageRoute(builder: (context) => const AlarmTimePickerScreen()),
@@ -98,7 +99,7 @@ class _AlarmListState extends State<AlarmList> with WidgetsBindingObserver {
             },
             onToggle: (value) async {
               if (value) {
-                await alarmManager.setScheduleAlarm(alarm);
+                await alarmManager.enableAlarm(alarm.id);
               } else {
                 await alarmManager.cancelAlarm(alarm.id);
               }

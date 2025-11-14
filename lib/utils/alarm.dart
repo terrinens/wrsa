@@ -12,8 +12,10 @@ String getAlarmSound() {
 }
 
 class AlarmManager {
-  late List<AlarmItem> alarms;
+  late Set<AlarmItem> alarms;
   static final Logger _log = Logger('AlarmManger');
+
+  final String _alarmSpName = "wrsa_alarms";
 
   static Future<void> _setAlarm({
     required int id,
@@ -38,7 +40,7 @@ class AlarmManager {
     try {
       _log.info('알람 세팅 : ${alarmSettings.dateTime}');
       await Alarm.set(alarmSettings: alarmSettings);
-    } catch(e) {
+    } catch (e) {
       _log.warning('알람 세팅중 오류 발생 ID : ${alarmSettings.id}');
       _log.warning(e);
     }
@@ -56,7 +58,13 @@ class AlarmManager {
   Future<void> cancelAlarm(int id) async {
     try {
       await Alarm.stop(id);
-      _saveAlarmsInfo();
+
+      try {
+        alarms.singleWhere((alarm) => alarm.id == id).isEnabled = false;
+        await _saveAlarmsInfo();
+      } catch (e) {
+        _log.warning('알람을 취소 하는데 필요한 정보를 찾지 못했습니다. ID : $id');
+      }
     } catch (e) {
       _log.info('알람 종료에 실패했습니다.');
     }
@@ -80,24 +88,52 @@ class AlarmManager {
   /// 알람을 '삭제'합니다. 모든 정보에서 삭제됩니다.
   Future<void> removeAlarm(int id) async {
     try {
+      _log.info('알람 삭제 호출. ID : $id');
       cancelAlarm(id);
       alarms.removeWhere((alarm) => alarm.id == id);
-      _saveAlarmsInfo();
+      await _saveAlarmsInfo();
     } catch (e) {
-      _log.info('알람을 삭제하던 도중 실패했습니다. 실패 ID : $id');
+      _log.warning('알람을 삭제하던 도중 실패했습니다. 실패 ID : $id');
+      _log.warning(e);
     }
   }
 
-  /// 알람 정보를 공유 환경에 설정하고, [alarms] 변수에 값을 할당합니다.
-  /// 초기 설정시 반드시 로드해야합니다.
-  Future<void> loadAlarms() async {
+  /// 기존에 작성된 알람을 '활성화'합니다. 반드시 기존에 존재하는 알림이 있어야합니다.
+  Future<void> enableAlarm(int id) async {
+    try {
+      _log.info('알람 활성화');
+
+      final alarm = alarms.firstWhere(
+        (alarm) => alarm.id == id,
+        orElse: () {
+          _log.warning('알람이 존재하지 않습니다. ID : $id');
+          throw Exception('알림이 존재하지 않습니다. : $id');
+        },
+      );
+
+      final now = DateTime.now();
+      var alarmTime = _createDateTime(alarm, now);
+
+      await _setAlarm(id: alarm.id, dateTime: alarmTime, title: alarm.title);
+      alarm.isEnabled = true;
+      await _saveAlarmsInfo();
+    } catch (e) {
+      _log.warning('알람 활성화중 오류가 발생했습니다. ID : $id');
+      if (alarms.where((alarm) => alarm.id == id).isEmpty) {
+        _log.warning('알람이 존재하지 않지만 활성화하려고 했기에 문제가 발생했습니다.');
+      }
+      _log.warning(e);
+    }
+  }
+
+  /// 알람 정보를 공유 환경에서 가져오고, [alarms] 변수에 값을 할당합니다.
+  Future<void> loadAlarmsInfo() async {
     final prefs = await SharedPreferences.getInstance();
-    // await prefs.remove('alarms');
-    final alarmsJson = prefs.getStringList('alarms') ?? [];
+    final alarmsJson = prefs.getStringList(_alarmSpName) ?? [];
 
     alarms = alarmsJson
         .map((json) => AlarmItem.fromJson(jsonDecode(json)))
-        .toList();
+        .toSet();
 
     _log.info('저장된 알람 개수: ${alarmsJson.length}');
     for (var json in alarmsJson) {
@@ -115,47 +151,42 @@ class AlarmManager {
     }*/
   }
 
-  /// 알람 스케줄을 등록합니다. 성공시 [alarm] 변수에 값 등록 및 공유 환경을 재설정합니다.
-  Future<void> setScheduleAlarm(AlarmItem alarm) async {
-    _log.info('새 알람 등록 시도.');
-    final now = DateTime.now();
-    DateTime alarmTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      alarm.time.hour,
-      alarm.time.minute,
-    );
-
-    if (alarmTime.isBefore(now)) {
-      alarmTime = alarmTime.add(const Duration(days: 1));
-    }
-
-    try {
-      await _setAlarm(id: alarm.id, dateTime: alarmTime, title: alarm.title);
-      _log.info('새 알람 등록 성공');
-    } catch (e) {
-      _log.warning('새 알람 스케쥴 등록중 오류 발생 $e');
-    }
-
-    try {
-      _log.info('새 알람 정보 저장중');
-      alarms.add(alarm);
-      _saveAlarmsInfo();
-      _log.info('새 알람 등록 성공');
-    } catch (e) {
-      _log.warning('새 알람 등록 실패. 설정된 알람 삭제 $e');
-      cancelAlarm(alarm.id);
-    }
-  }
-
   /// 알람 정보를 공유 환경에서 사용 할 수 있도록 [alarms]에 있는 정보를 변환하고, 공유 환경에 설정합니다.
   Future<void> _saveAlarmsInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final alarmsJson = alarms
         .map((alarm) => jsonEncode(alarm.toJson()))
         .toList();
-    await prefs.setStringList('alarms', alarmsJson);
+    await prefs.setStringList(_alarmSpName, alarmsJson);
+  }
+
+  /// 새 알람 스케줄을 등록합니다. 성공시 [alarm] 변수에 값 등록 및 공유 환경을 재설정합니다.
+  /// 기존에 존재하는 알람 활성화를 위해서는 [enableAlarm]을 사용하십시오.
+  Future<void> setScheduleAlarm(AlarmItem alarm) async {
+    _log.info('새 알람 등록 시도.');
+    final now = DateTime.now();
+    var alarmTime = _createDateTime(alarm, now);
+    if (alarmTime.isBefore(now)) {
+      alarmTime = alarmTime.add(const Duration(days: 1));
+    }
+
+    try {
+      await _setAlarm(id: alarm.id, dateTime: alarmTime, title: alarm.title);
+      _log.info('새 알람 스케쥴 등록 성공');
+    } catch (e) {
+      _log.warning('새 알람 스케쥴 등록중 오류 발생 $e');
+      throw Exception('새 알람 스케쥴 등록중 실패');
+    }
+
+    try {
+      _log.info('새 알람 정보 저장중');
+      alarms.add(alarm);
+      _log.info('새 알람 정보 등록 성공');
+      await _saveAlarmsInfo();
+    } catch (e) {
+      _log.warning('새 알람 등록 실패. 설정된 알람 삭제 $e');
+      await removeAlarm(alarm.id);
+    }
   }
 
   /// [id]를 활용해, 해당 알람이 동작하는지 확인합니다.
@@ -186,5 +217,21 @@ class AlarmManager {
       androidStopAlarmOnTermination: setting.androidStopAlarmOnTermination,
       warningNotificationOnKill: setting.warningNotificationOnKill,
     );
+  }
+
+  DateTime _createDateTime(AlarmItem alarm, DateTime now) {
+    var alarmTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      alarm.time.hour,
+      alarm.time.minute,
+    );
+
+    if (alarmTime.isBefore(now)) {
+      alarmTime = alarmTime.add(const Duration(days: 1));
+    }
+
+    return alarmTime;
   }
 }

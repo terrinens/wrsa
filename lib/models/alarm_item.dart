@@ -1,7 +1,10 @@
 import 'package:alarm/model/alarm_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:path/path.dart';
 
+/// 알람을 구성하는데 필요한 모델입니다.
+/// [id]를 기준으로 [equals]를 판단합니다.
 @JsonSerializable()
 class AlarmItem {
   @JsonKey(name: 'id')
@@ -58,4 +61,16 @@ class AlarmItem {
       isEnabled: enabled,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is AlarmItem &&
+        runtimeType == other.runtimeType &&
+        id == other.id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }
