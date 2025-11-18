@@ -41,8 +41,8 @@ func InitClient() {
 	Client = client
 }
 
-/*newDBData 새 데이터를 등록합니다. */
-func newDBData(data *Weather) bool {
+/*insertWeatherData 새 데이터를 등록합니다. */
+func insertWeatherData(data *Weather) bool {
 	ref := Client.Collection("weather")
 	ctx := context.Background()
 
@@ -55,8 +55,8 @@ func newDBData(data *Weather) bool {
 	return true
 }
 
-/*RegDBData 기존의 Fcst Data, NX, XY와 동일한 필드를 찾고, 동일할 경우에 이를 갱신합니다. 존재하지 않을 경우에는 새롭게 등록합니다.*/
-func RegDBData(data *Weather) {
+/*RegisterWeatherData 기존의 Fcst Data, NX, XY와 동일한 필드를 찾고, 동일할 경우에 이를 갱신합니다. 존재하지 않을 경우에는 새롭게 등록합니다.*/
+func RegisterWeatherData(data *Weather) bool {
 	ref := Client.Collection("weather")
 	ctx := context.Background()
 
@@ -70,11 +70,14 @@ func RegDBData(data *Weather) {
 
 	doc, _ := iter.Next()
 	if doc == nil {
-		newDBData(data)
+		return insertWeatherData(data)
 	} else {
 		_, err := doc.Ref.Set(ctx, data)
 		if err != nil {
 			log.Fatalf("error updating data for %s: %v\n", data.FcstDate, err)
+			return false
 		}
+
+		return true
 	}
 }

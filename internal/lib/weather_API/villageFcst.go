@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -42,7 +43,7 @@ type VillageFcstItem struct {
 
 /*
 VillageFcstInfo 단기예보 조회 API
-시스템 init에서부터 auth key는 주입되어있는것을 전제로 작성된 함수입니다.
+시스템 infinite auth key는 주입되어있는것을 전제로 작성된 함수입니다.
 nx,ny 는 현재 고정.
 Fcst Info API는 최대 {baseDate + 1} ~ {baseDate + 4} 데이터를 보장합니다.
 
@@ -72,7 +73,17 @@ func VillageFcstInfo(baseDate string, baseTime string, nx int, ny int) map[strin
 }
 
 func getAuthKey() string {
-	keyLocation := "/weather/weather-api-key"
+	var keyLocation string
+	keyFileName := "weather-api-key"
+
+	if os.Getenv("DEV") == "true" {
+		// 윈도우 환경에서만 고려함.
+		profile := os.Getenv("USERPROFILE")
+		keyLocation = path.Join(profile, "Documents", "keys", keyFileName)
+	} else {
+		keyLocation = path.Join("weather", keyFileName)
+	}
+
 	content, err := os.ReadFile(keyLocation)
 	if err != nil {
 		log.Fatal("API key file read failed: " + err.Error())

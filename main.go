@@ -10,14 +10,13 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
 func main() {
-	database.InitClient()
-
 	loc, _ := time.LoadLocation("Asia/Seoul")
 
 	timeLayout := "20060102"
@@ -30,18 +29,40 @@ func main() {
 	ttl := createTTL(ttlTime, loc)
 
 	var rDate = regDate{ttl: ttl, callDate: callDate, trueDate: trueDate, endDate: endDate}
-	var errorFCST = dataReg(grid.RepresentativeGrids, rDate)
+	var data, errorFCST = fetchWeatherDataConcurrently(grid.RepresentativeGrids, rDate)
 
-	if len(errorFCST) == 0 {
-		log.Printf("모든 데이터 갱신 성공")
-	} else {
-		log.Printf("API 호출 실패건수 %d이 있으므로 재호출 시도...", len(errorFCST))
-		errorFCST = dataReg(grid.RepresentativeGrids, rDate)
+	if len(errorFCST) != 0 {
+		log.Printf("API 호출 실패 건수 %d", len(errorFCST))
+		log.Printf("재호출을 시도합니다...")
 
-		if len(errorFCST) != 0 {
-			log.Fatalf("실패된 요청을 재요청했으나, %d의 건이 재실패되었습니다. 서버 상태를 확인해주세요", len(errorFCST))
+		var failGrids []grid.RepresentativeGrid
+		for _, fcst := range errorFCST {
+			findGrid := grid.GetAreaCodeFromGrid(fcst.nx, fcst.ny)
+			failGrids = append(failGrids, findGrid)
+		}
+
+		newData, errorFCST := fetchWeatherDataConcurrently(failGrids, rDate)
+
+		data = append(data, newData...)
+
+		if errorFCST != nil {
+			log.Printf("재호출을 시도 했으나, 여전히 %d건의 API 호출을 실패했습니다. 서버 상태를 확인해주십시오.", len(errorFCST))
 		}
 	}
+
+	log.Printf("호출된 데이터 건수 %d DB 등록 시도.", len(data))
+	insertFails := insertWeatherDataConcurrently(data)
+
+	if len(insertFails) != 0 {
+		log.Printf("DB 등록에 실패한 건수 %d", len(insertFails))
+		log.Printf("재등록을 시도합니다...")
+
+		insertFails = insertWeatherDataConcurrently(insertFails)
+		if insertFails != nil {
+			log.Printf("재등록을 시도 했으나, 여전히 %d건의 등록을 실패했습니다. DB 서버 상태를 확인해주십시오.", len(insertFails))
+		}
+	}
+
 }
 
 type ErrorFCST struct {
@@ -50,6 +71,7 @@ type ErrorFCST struct {
 	ny       int
 }
 
+// regDate 데이터 등록날짜를 위해 사용하는 모델입니다.
 type regDate struct {
 	ttl      *timestamp.Timestamp
 	callDate string
@@ -57,57 +79,119 @@ type regDate struct {
 	endDate  string
 }
 
-// dataReg 주어진 grid를 토대로 API를 호출하고, 이를 db에 등록합니다.
-func dataReg(grid []grid.RepresentativeGrid, date regDate) []ErrorFCST {
-	var errorFCST []ErrorFCST
+// createSemaphore 제한된 환경으로 인해 동시작업을 최대 30으로 제한합니다.
+func createSemaphore(maxConcurrent int) chan struct{} {
+	routineLimit := min(maxConcurrent, 30)
+	return make(chan struct{}, routineLimit)
+}
+
+// fetchWeatherDataConcurrently 주어진 grid를 토대로 API를 호출하고, 이의 결과물을 리턴합니다.
+func fetchWeatherDataConcurrently(grid []grid.RepresentativeGrid, date regDate) ([]*database.Weather, []ErrorFCST) {
+	dataChan := make(chan []*database.Weather, len(grid))
+	errorChan := make(chan ErrorFCST, len(grid))
+
+	var wg sync.WaitGroup
+	semaphore := createSemaphore(len(grid))
 
 	for _, info := range grid {
+		wg.Add(1)
+
 		nx := info.Nx
 		ny := info.Ny
 
-		fcstItem := weather_API.VillageFcstInfo(date.callDate, "2300", nx, ny)
+		go func() {
+			defer wg.Done()
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
 
-		if fcstItem == nil {
-			errorFCST = append(errorFCST, ErrorFCST{baseTime: "2300", nx: nx, ny: ny})
-			log.Printf("%s 지역 데이터 불러오기 실패.", info.Name)
-			continue
+			fcstItem := weather_API.VillageFcstInfo(date.callDate, "2300", nx, ny)
+			if fcstItem == nil {
+				errorChan <- ErrorFCST{baseTime: "2300", nx: nx, ny: ny}
+				log.Printf("%s 지역 데이터 불러오기 실패.", info.Name)
+				return
+			}
+
+			weatherData := createWeatherData(date.ttl, fcstItem, info)
+			dataChan <- weatherData
+
+			log.Printf("%s 지역 %s로부터 %s까지 데이터 불러오기 성공", info.Name, date.trueDate, date.endDate)
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(errorChan)
+		close(dataChan)
+	}()
+
+	var data []*database.Weather
+	done := make(chan struct{})
+
+	go func() {
+		for d := range dataChan {
+			data = append(data, d...)
 		}
+		done <- struct{}{}
+	}()
 
-		regData(date.ttl, fcstItem, info)
-
-		log.Printf("%s 지역 %s로부터 %s까지 데이터 등록 성공", info.Name, date.trueDate, date.endDate)
+	var errors []ErrorFCST
+	for e := range errorChan {
+		errors = append(errors, e)
 	}
 
-	return errorFCST
+	<-done
+	return data, errors
 }
 
-// regData fcstItem을 기반으로 데이터를 db에 등록합니다.
-func regData(ttl *timestamp.Timestamp, fcstItem map[string]map[weather.Category][]weather_API.VillageFcstItem, info grid.RepresentativeGrid) {
-	dbData := createDBData(ttl, fcstItem, info)
+// db 동시 삽입할것
+func insertWeatherDataConcurrently(data []*database.Weather) []*database.Weather {
+	errorChan := make(chan *database.Weather, len(data))
 
-	for _, data := range dbData {
-		database.RegDBData(data)
+	var wg sync.WaitGroup
+	semaphore := createSemaphore(len(data))
+
+	startTime := time.Now()
+	totalCount := len(data)
+
+	for _, info := range data {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			success := database.RegisterWeatherData(info)
+
+			if !success {
+				errorChan <- info
+				log.Printf("%s : %s 등록 실패", info.Name, info.FcstDate)
+			} else {
+				log.Printf("%s : %s 등록 성공", info.Name, info.FcstDate)
+			}
+		}()
 	}
+
+	go func() {
+		wg.Wait()
+		close(errorChan)
+	}()
+
+	var errors []*database.Weather
+	for e := range errorChan {
+		errors = append(errors, e)
+	}
+
+	successCount := totalCount - len(errors)
+	elapsed := time.Since(startTime)
+	log.Printf("총 %d건 중 성공 %d건, 실패 %d건 (소요시간: %v)",
+		totalCount, successCount, len(errors), elapsed)
+	return errors
 }
 
-/*
-createDBData fcst 의 데이터를 활용하여, DB에 등록할 데이터를 생성합니다.
-```
-
-		"20210101" : {
-			NX:         60,
-				NY:         127,
-				Name:       "부산",
-				AvgTempera: 18.0,
-				Wash:       "좋음",
-				Wind:       3.0,
-				TTL:        nil,
-	}
-
-```
-*/
-func createDBData(ttl *timestamp.Timestamp, fcstItem map[string]map[weather.Category][]weather_API.VillageFcstItem, grid grid.RepresentativeGrid) map[string]*database.Weather {
-	var syncData = make(map[string]*database.Weather)
+/*createWeatherData fcst 의 데이터를 활용하여, DB에 등록할 데이터를 생성합니다.*/
+func createWeatherData(ttl *timestamp.Timestamp, fcstItem map[string]map[weather.Category][]weather_API.VillageFcstItem, grid grid.RepresentativeGrid) []*database.Weather {
+	var syncData []*database.Weather
 
 	lastTMN := 0.0
 	lastTMX := 0.0
@@ -140,7 +224,7 @@ func createDBData(ttl *timestamp.Timestamp, fcstItem map[string]map[weather.Cate
 		dbData.Sky = weather.Sky(simpleAVG(item[weather.SKY]))
 		dbData.Wind = calculate.WindAvg(item[weather.WSD])
 
-		syncData[key] = &dbData
+		syncData = append(syncData, &dbData)
 	}
 
 	return syncData
@@ -186,5 +270,9 @@ func init() {
 		if err != nil {
 			log.Fatalf("Failed to set DEV environment variable")
 		}
+
+		err = os.Setenv("FIRESTORE_EMULATOR_HOST", "::1:8480")
 	}
+
+	database.InitClient()
 }
