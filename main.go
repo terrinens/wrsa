@@ -266,12 +266,11 @@ func createTTL(date string, loc *time.Location) *timestamp.Timestamp {
 
 func init() {
 	if len(os.Args) > 1 && strings.ToLower(os.Args[1]) == "dev" {
+		log.Printf("디버그 모드 감지")
 		err := os.Setenv("DEV", "true")
 		if err != nil {
 			log.Fatalf("Failed to set DEV environment variable")
 		}
-
-		err = os.Setenv("FIRESTORE_EMULATOR_HOST", "::1:8480")
 	}
 
 	database.InitClient()

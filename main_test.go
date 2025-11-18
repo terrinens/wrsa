@@ -1,17 +1,11 @@
 package main
 
 import (
-	database "db_sync/internal/db"
 	"db_sync/internal/lib/code/grid"
-	"os"
+	"log"
 	"testing"
 	"time"
 )
-
-func init() {
-	_ = os.Setenv("DEV", "true")
-	database.InitClient()
-}
 
 func _createRdata() regDate {
 	loc, _ := time.LoadLocation("Asia/Seoul")
@@ -37,4 +31,8 @@ func TestInsertWeatherDataConcurrently(t *testing.T) {
 	var rDate = _createRdata()
 	data, _ := fetchWeatherDataConcurrently(grid.RepresentativeGrids, rDate)
 	insertWeatherDataConcurrently(data)
+}
+
+func TestMainInit(t *testing.T) {
+	log.Println("MAIN init Test")
 }

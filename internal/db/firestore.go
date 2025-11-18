@@ -1,13 +1,12 @@
 package database
 
 import (
-	"context"
-	"log"
-	"os"
-
 	"cloud.google.com/go/firestore"
+	"context"
 	firebase "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
+	"log"
+	"os"
 )
 
 var Client *firestore.Client
@@ -15,12 +14,15 @@ var Client *firestore.Client
 /*InitClient 해당 함수는 DB를 초기화하고 글로벌 변수 Client에 결과를 주입합니다.*/
 func InitClient() {
 	var clientOptions option.ClientOption
+	var newAppConfig *firebase.Config = nil
 
 	if os.Getenv("DEV") == "true" {
-		clientOptions = option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+		log.Printf("DEV 환경 : Firestore 에뮬레이터 연결")
+		var projectID string
+		clientOptions, projectID = setEmulators()
+		newAppConfig = &firebase.Config{ProjectID: projectID}
 	} else {
 		var credentialsFile, err = os.ReadFile("/keys/firestore_key")
-
 		if err != nil {
 			log.Fatalf("Error reading firestore key file: %v", err)
 		}
@@ -28,7 +30,7 @@ func InitClient() {
 		clientOptions = option.WithCredentialsJSON(credentialsFile)
 	}
 
-	app, err := firebase.NewApp(context.Background(), nil, clientOptions)
+	app, err := firebase.NewApp(context.Background(), newAppConfig, clientOptions)
 	if err != nil || app == nil {
 		log.Fatalf("error initializing app: %v\n", err)
 	}
@@ -39,6 +41,11 @@ func InitClient() {
 	}
 
 	Client = client
+
+	if os.Getenv("DEV") == "true" {
+		log.Printf("에뮬레이터 연결 테스트...")
+		err = testConnectEmulators()
+	}
 }
 
 /*insertWeatherData 새 데이터를 등록합니다. */
