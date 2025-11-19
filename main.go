@@ -7,7 +7,7 @@ import (
 	"db_sync/internal/lib/code/weather"
 	"db_sync/internal/lib/logger"
 	"db_sync/internal/lib/weather_API"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"os"
 	"strconv"
 	"strings"
@@ -75,7 +75,7 @@ type ErrorFCST struct {
 
 // regDate 데이터 등록날짜를 위해 사용하는 모델입니다.
 type regDate struct {
-	ttl      *timestamp.Timestamp
+	ttl      *timestamppb.Timestamp
 	callDate string
 	trueDate string
 	endDate  string
@@ -187,7 +187,7 @@ func insertWeatherDataConcurrently(data []*database.Weather) []*database.Weather
 }
 
 /*createWeatherData fcst 의 데이터를 활용하여, DB에 등록할 데이터를 생성합니다.*/
-func createWeatherData(ttl *timestamp.Timestamp, fcstItem map[string]map[weather.Category][]weather_API.VillageFcstItem, grid grid.RepresentativeGrid) []*database.Weather {
+func createWeatherData(ttl *timestamppb.Timestamp, fcstItem map[string]map[weather.Category][]weather_API.VillageFcstItem, grid grid.RepresentativeGrid) []*database.Weather {
 	var syncData []*database.Weather
 
 	lastTMN := 0.0
@@ -249,13 +249,12 @@ func simpleAVG(data []weather_API.VillageFcstItem) int64 {
 	return int64(int(total) / len(data))
 }
 
-func createTTL(date string, loc *time.Location) *timestamp.Timestamp {
+func createTTL(date string, loc *time.Location) *timestamppb.Timestamp {
 	t, err := time.ParseInLocation("20060102", date, loc)
 	if err != nil {
 		log.Fatal("Failed to parse date:", err)
 	}
-
-	return &timestamp.Timestamp{
+	return &timestamppb.Timestamp{
 		Seconds: t.Unix(),
 		Nanos:   int32(t.Nanosecond()),
 	}

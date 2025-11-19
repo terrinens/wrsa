@@ -5,8 +5,8 @@ go 1.24.6
 require (
 	cloud.google.com/go/firestore v1.19.0
 	firebase.google.com/go/v4 v4.18.0
-	github.com/golang/protobuf v1.5.4
 	google.golang.org/api v0.252.0
+	google.golang.org/protobuf v1.36.10
 )
 
 require (
@@ -32,6 +32,7 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
@@ -60,5 +61,4 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251002232023-7c0ddcbb5797 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
-	google.golang.org/protobuf v1.36.10 // indirect
 )
