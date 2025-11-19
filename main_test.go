@@ -2,7 +2,6 @@ package main
 
 import (
 	"db_sync/internal/lib/code/grid"
-	"log"
 	"testing"
 	"time"
 )
@@ -34,5 +33,5 @@ func TestInsertWeatherDataConcurrently(t *testing.T) {
 }
 
 func TestMainInit(t *testing.T) {
-	log.Println("MAIN init Test")
+	log.Info("MAIN init Test")
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"google.golang.org/api/option"
-	"log"
 	"os"
 	"time"
 )
@@ -15,16 +14,16 @@ import (
 // 에뮬레이터 실행: firebase emulators:start --only firestore --project demo
 // project 이름 자유롭게 변환되어도 좋지만, 반드시 UI를 사용하기 위해 --project 인수에 동일하게 설정되어야 합니다.
 func setEmulators() (option.ClientOption, string) {
-	log.Printf("Firebase 에뮬레이터 설정 가져오는 중")
+	log.Debug("Firebase 에뮬레이터 설정 가져오는 중")
 	emulatorConfigFile, err := os.ReadFile("firebase.json")
 	if err != nil {
-		log.Fatalf("Cant find emulator config %s", err.Error())
+		log.Fatal("firebase.json 설정 파일을 찾을 수 없음", "error", err)
 	}
 
 	var config *emulatorConfig
 
 	if err = json.Unmarshal(emulatorConfigFile, &config); err != nil {
-		log.Fatalf("Cant unmarshal emulator config %s", err.Error())
+		log.Fatal("firebase.json 파싱 실패", "error", err)
 	}
 
 	host := config.Emulators.Firestore.Host
@@ -34,7 +33,7 @@ func setEmulators() (option.ClientOption, string) {
 	err = os.Setenv("FIRESTORE_EMULATOR_HOST", emulatorHost)
 
 	if err != nil {
-		log.Fatalf("Cant set FIRESTORE_EMULATOR_HOST env variable : %s", err.Error())
+		log.Fatal("FIRESTORE_EMULATOR_HOST 환경변수 설정 실패", "error", err)
 	}
 
 	return option.WithoutAuthentication(), "demo"
@@ -48,7 +47,7 @@ func testConnectEmulators() error {
 	testCollection := "_connection_test"
 	testDocID := fmt.Sprintf("test_%d", time.Now().UnixNano())
 
-	log.Println("=== Firestore 연결 테스트 시작 ===")
+	log.Info("=== Firestore 연결 테스트 시작 ===")
 
 	// 테스트 종료 시 무조건 삭제 시도
 	defer func() {
@@ -56,9 +55,9 @@ func testConnectEmulators() error {
 		defer deleteCancel()
 
 		if _, err := Client.Collection(testCollection).Doc(testDocID).Delete(deleteCtx); err != nil {
-			log.Printf("[WARN] 테스트 데이터 삭제 실패 (무시 가능): %v", err)
+			log.Warn("테스트 데이터 삭제 실패 (무시 가능)", "error", err)
 		} else {
-			log.Println("[SUCCESS] 테스트 데이터 삭제 성공")
+			log.Info("테스트 데이터 삭제 성공")
 		}
 	}()
 
@@ -70,36 +69,36 @@ func testConnectEmulators() error {
 		"env":       os.Getenv("DEV"),
 	}
 
-	log.Println("[TEST] 쓰기 테스트 중...")
+	log.Info("[TEST] 쓰기 테스트 중...")
 	if _, err := Client.Collection(testCollection).Doc(testDocID).Set(ctx, testData); err != nil {
-		log.Printf("[ERROR] Firestore 쓰기 실패: %v", err)
+		log.Error("Firestore 쓰기 실패", "error", err)
 		return fmt.Errorf("write test failed: %w", err)
 	}
-	log.Println("[SUCCESS] 쓰기 테스트 성공")
+	log.Info("쓰기 테스트 성공")
 
 	// 2. 읽기 테스트
-	log.Println("[TEST] 읽기 테스트 중...")
+	log.Info("[TEST] 읽기 테스트 중...")
 	doc, err := Client.Collection(testCollection).Doc(testDocID).Get(ctx)
 	if err != nil {
-		log.Printf("[ERROR] Firestore 읽기 실패: %v", err)
+		log.Error("Firestore 읽기 실패", "error", err)
 		return fmt.Errorf("read test failed: %w", err)
 	}
 
 	var readData map[string]interface{}
 	if err := doc.DataTo(&readData); err != nil {
-		log.Printf("[ERROR] 데이터 변환 실패: %v", err)
+		log.Error("데이터 변환 실패", "error", err)
 		return fmt.Errorf("data conversion failed: %w", err)
 	}
-	log.Printf("[SUCCESS] 읽기 테스트 성공: message=%v", readData["message"])
+	log.Info("읽기 테스트 성공", "message", readData["message"])
 
 	// 3. 데이터 검증
 	if readData["message"] != testData["message"] {
-		log.Printf("[ERROR] 데이터 불일치: expected=%v, got=%v", testData["message"], readData["message"])
+		log.Error("데이터 불일치", "expected", testData["message"], "got", readData["message"])
 		return fmt.Errorf("data mismatch")
 	}
-	log.Println("[SUCCESS] 데이터 검증 성공")
+	log.Info("데이터 검증 성공")
 
-	log.Println("=== Firestore 연결 테스트 완료 ===")
+	log.Info("=== Firestore 연결 테스트 완료 ===")
 	return nil
 }
 

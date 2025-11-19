@@ -4,13 +4,16 @@ import (
 	"db_sync/internal/lib/code/weather"
 	"encoding/json"
 	"io"
-	"log"
+
+	"db_sync/internal/lib/logger"
 	"net/http"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 )
+
+var log = logger.New()
 
 type VillageFcstResponse struct {
 	Response struct {
@@ -64,7 +67,7 @@ func VillageFcstInfo(baseDate string, baseTime string, nx int, ny int) map[strin
 	result := callAPI(url)
 
 	if result == nil {
-		log.Println("기상청 API 호출에 실패했습니다.")
+		log.Warn("기상청 API 호출에 실패했습니다.")
 		return nil
 	}
 
@@ -118,32 +121,32 @@ func createUrl(baseDate string, baseTime string, nx int, ny int) string {
 func callAPI(url string) []VillageFcstItem {
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal("API 호출 실패 : " + err.Error())
+		log.Warn("API 호출 실패 : " + err.Error())
 		return nil
 	}
 
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			log.Fatal("Body close 실패")
+			log.Error("Body close 실패")
 		}
 	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("응답 읽기 실패 : " + err.Error())
+		log.Error("응답 읽기 실패 : " + err.Error())
 		return nil
 	}
 
 	var apiResponse VillageFcstResponse
 	err = json.Unmarshal(body, &apiResponse)
 	if err != nil {
-		log.Fatal("JSON 파싱 실패 : " + err.Error())
+		log.Error("JSON 파싱 실패 : " + err.Error())
 		return nil
 	}
 
 	if apiResponse.Response.Header.ResultCode != "00" {
-		log.Printf("API 오류: %s - %s",
+		log.Error("API 오류: %s - %s",
 			apiResponse.Response.Header.ResultCode,
 			apiResponse.Response.Header.ResultMsg)
 		return nil

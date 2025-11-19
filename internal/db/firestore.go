@@ -3,13 +3,14 @@ package database
 import (
 	"cloud.google.com/go/firestore"
 	"context"
+	"db_sync/internal/lib/logger"
 	firebase "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
-	"log"
 	"os"
 )
 
 var Client *firestore.Client
+var log = logger.New()
 
 /*InitClient 해당 함수는 DB를 초기화하고 글로벌 변수 Client에 결과를 주입합니다.*/
 func InitClient() {
@@ -17,14 +18,14 @@ func InitClient() {
 	var newAppConfig *firebase.Config = nil
 
 	if os.Getenv("DEV") == "true" {
-		log.Printf("DEV 환경 : Firestore 에뮬레이터 연결")
+		log.Info("DEV 환경 : Firestore 에뮬레이터 연결")
 		var projectID string
 		clientOptions, projectID = setEmulators()
 		newAppConfig = &firebase.Config{ProjectID: projectID}
 	} else {
 		var credentialsFile, err = os.ReadFile("/keys/firestore_key")
 		if err != nil {
-			log.Fatalf("Error reading firestore key file: %v", err)
+			log.Fatal("Firestore 인증키 파일 읽기 실패", "error", err)
 		}
 
 		clientOptions = option.WithCredentialsJSON(credentialsFile)
@@ -32,18 +33,19 @@ func InitClient() {
 
 	app, err := firebase.NewApp(context.Background(), newAppConfig, clientOptions)
 	if err != nil || app == nil {
-		log.Fatalf("error initializing app: %v\n", err)
+		log.Fatal("Firebase App 초기화 실패", "error", err)
+		return // IDE 사용시 Custom Log 의 동작을 인지하지 못하기에 의도된 동작.
 	}
 
 	client, err := app.Firestore(context.Background())
 	if err != nil || client == nil {
-		log.Fatalf("error getting client: %v\n", err)
+		log.Fatal("Firestore 클라이언트 생성 실패", "error", err)
 	}
 
 	Client = client
 
 	if os.Getenv("DEV") == "true" {
-		log.Printf("에뮬레이터 연결 테스트...")
+		log.Info("에뮬레이터 연결 테스트...")
 		err = testConnectEmulators()
 	}
 }
@@ -55,7 +57,7 @@ func insertWeatherData(data *Weather) bool {
 
 	_, _, err := ref.Add(ctx, data)
 	if err != nil {
-		log.Fatalf("error adding data for %s: %v\n", data.FcstDate, err)
+		log.Fatal("데이터 추가 실패", "날짜", data.FcstDate, "error", err)
 		return false
 	}
 
@@ -81,7 +83,7 @@ func RegisterWeatherData(data *Weather) bool {
 	} else {
 		_, err := doc.Ref.Set(ctx, data)
 		if err != nil {
-			log.Fatalf("error updating data for %s: %v\n", data.FcstDate, err)
+			log.Fatal("데이터 업데이트 실패", "날짜", data.FcstDate, "error", err)
 			return false
 		}
 

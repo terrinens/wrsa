@@ -5,16 +5,18 @@ import (
 	"db_sync/internal/lib/calculate"
 	"db_sync/internal/lib/code/grid"
 	"db_sync/internal/lib/code/weather"
+	"db_sync/internal/lib/logger"
 	"db_sync/internal/lib/weather_API"
-	"log"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/golang/protobuf/ptypes/timestamp"
 )
+
+var Logger *logger.Logger
+var log = Logger
 
 func main() {
 	loc, _ := time.LoadLocation("Asia/Seoul")
@@ -32,8 +34,8 @@ func main() {
 	var data, errorFCST = fetchWeatherDataConcurrently(grid.RepresentativeGrids, rDate)
 
 	if len(errorFCST) != 0 {
-		log.Printf("API 호출 실패 건수 %d", len(errorFCST))
-		log.Printf("재호출을 시도합니다...")
+		log.Warn("API 호출 실패", "건수", len(errorFCST))
+		log.Info("재호출을 시도합니다...")
 
 		var failGrids []grid.RepresentativeGrid
 		for _, fcst := range errorFCST {
@@ -46,20 +48,20 @@ func main() {
 		data = append(data, newData...)
 
 		if errorFCST != nil {
-			log.Printf("재호출을 시도 했으나, 여전히 %d건의 API 호출을 실패했습니다. 서버 상태를 확인해주십시오.", len(errorFCST))
+			log.Error("재호출 후에도 API 호출 실패", "실패건수", len(errorFCST), "메시지", "서버 상태를 확인해주십시오")
 		}
 	}
 
-	log.Printf("호출된 데이터 건수 %d DB 등록 시도.", len(data))
+	log.Info("DB 등록 시도", "데이터건수", len(data))
 	insertFails := insertWeatherDataConcurrently(data)
 
 	if len(insertFails) != 0 {
-		log.Printf("DB 등록에 실패한 건수 %d", len(insertFails))
-		log.Printf("재등록을 시도합니다...")
+		log.Warn("DB 등록 실패", "건수", len(insertFails))
+		log.Info("재등록을 시도합니다...")
 
 		insertFails = insertWeatherDataConcurrently(insertFails)
 		if insertFails != nil {
-			log.Printf("재등록을 시도 했으나, 여전히 %d건의 등록을 실패했습니다. DB 서버 상태를 확인해주십시오.", len(insertFails))
+			log.Error("재등록 후에도 DB 등록 실패", "실패건수", len(insertFails), "메시지", "DB 서버 상태를 확인해주십시오")
 		}
 	}
 
@@ -107,14 +109,13 @@ func fetchWeatherDataConcurrently(grid []grid.RepresentativeGrid, date regDate) 
 			fcstItem := weather_API.VillageFcstInfo(date.callDate, "2300", nx, ny)
 			if fcstItem == nil {
 				errorChan <- ErrorFCST{baseTime: "2300", nx: nx, ny: ny}
-				log.Printf("%s 지역 데이터 불러오기 실패.", info.Name)
 				return
 			}
 
 			weatherData := createWeatherData(date.ttl, fcstItem, info)
 			dataChan <- weatherData
 
-			log.Printf("%s 지역 %s로부터 %s까지 데이터 불러오기 성공", info.Name, date.trueDate, date.endDate)
+			log.Info("데이터 불러오기 성공", "지역", info.Name, "시작일", date.trueDate, "종료일", date.endDate)
 		}()
 	}
 
@@ -165,9 +166,6 @@ func insertWeatherDataConcurrently(data []*database.Weather) []*database.Weather
 
 			if !success {
 				errorChan <- info
-				log.Printf("%s : %s 등록 실패", info.Name, info.FcstDate)
-			} else {
-				log.Printf("%s : %s 등록 성공", info.Name, info.FcstDate)
 			}
 		}()
 	}
@@ -184,8 +182,7 @@ func insertWeatherDataConcurrently(data []*database.Weather) []*database.Weather
 
 	successCount := totalCount - len(errors)
 	elapsed := time.Since(startTime)
-	log.Printf("총 %d건 중 성공 %d건, 실패 %d건 (소요시간: %v)",
-		totalCount, successCount, len(errors), elapsed)
+	log.Info("DB 등록 완료", "총건수", totalCount, "성공", successCount, "실패", len(errors), "소요시간", elapsed)
 	return errors
 }
 
@@ -265,12 +262,19 @@ func createTTL(date string, loc *time.Location) *timestamp.Timestamp {
 }
 
 func init() {
+	var setEnvErr error
 	if len(os.Args) > 1 && strings.ToLower(os.Args[1]) == "dev" {
-		log.Printf("디버그 모드 감지")
-		err := os.Setenv("DEV", "true")
-		if err != nil {
-			log.Fatalf("Failed to set DEV environment variable")
-		}
+		setEnvErr = os.Setenv("DEV", "true")
+	}
+
+	log = logger.New()
+
+	if setEnvErr != nil {
+		log.Fatal("Failed to set DEV environment variable", "error", setEnvErr)
+	}
+
+	if os.Getenv("DEV") == "true" {
+		log.Debug("디버그 모드 감지")
 	}
 
 	database.InitClient()
