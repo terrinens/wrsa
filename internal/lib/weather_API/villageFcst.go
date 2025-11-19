@@ -84,7 +84,7 @@ func getAuthKey() string {
 		profile := os.Getenv("USERPROFILE")
 		keyLocation = path.Join(profile, "Documents", "keys", keyFileName)
 	} else {
-		keyLocation = path.Join("weather", keyFileName)
+		keyLocation = path.Join("/weather", keyFileName)
 	}
 
 	content, err := os.ReadFile(keyLocation)
